@@ -211,10 +211,6 @@ public class M_Users {
                 ? "NULL"
                 : "'" + email_verified_at.toString().replace('T', ' ') + "'";
 
-        String updatedAtSql = (updated_at == null)
-                ? "NULL"
-                : "'" + updated_at.toString().replace('T', ' ') + "'";
-
         String sql = "UPDATE mcd_users SET "
                 + "name = '" + name + "', "
                 + "prenom = '" + prenom + "', "
@@ -224,7 +220,6 @@ public class M_Users {
                 + "password = '" + password + "', "
                 + "remember_token = " + (remember_token == null ? "NULL" : "'" + remember_token + "'") + ", "
                 + "commentaire = " + (commentaire == null ? "NULL" : "'" + commentaire + "'") + ", "
-                + "updated_at = " + updatedAtSql + ", "
                 + "id_role = " + id_role + " "
                 + "WHERE id = " + idUtilisateur;
 
@@ -325,20 +320,19 @@ public class M_Users {
 //        System.out.println("VERIFY=" + BCrypt.verifyer().verify("pergaixj".toCharArray(), hash).verified);
 
         // 1) INSERT (crée un user)
-//        String emailTest = "test_" + System.currentTimeMillis() + "@mail.fr";
-//        String hashPwd = BCrypt.withDefaults().hashToString(12, "azerty".toCharArray());
-//
-//        M_User u = new M_User(base,
-//                "pseudoTest",
-//                "Yanis",
-//                "Proust",
-//                emailTest,
-//                hashPwd,
-//                null,
-//                "créé depuis main()",
-//                1
-//        );
-//        System.out.println("\n[INSERT OK] id=" + u.getIdUtilisateur() + " email=" + u.getEmail());
+        String emailTest = "test_" + System.currentTimeMillis() + "@mail.fr";
+        String hashPwd = BCrypt.withDefaults().hashToString(12, "azerty".toCharArray());
+
+        M_Users u = new M_Users(base,
+                "pseudoTest",
+                "Yanis",
+                "Proust",
+                emailTest,
+                hashPwd,
+                "créé depuis main()",
+                1
+        );
+        System.out.println("\n[INSERT OK] id=" + u.getIdUtilisateur() + " email=" + u.getEmail());
 //
 //        // 2) SELECT BY ID
 //        M_User u2 = new M_User(base, u.getIdUtilisateur());

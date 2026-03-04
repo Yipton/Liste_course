@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.table.DefaultTableModel;
 import at.favre.lib.crypto.bcrypt.BCrypt;
+
 /**
  *
  * @author ninis
@@ -21,19 +22,21 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 public class V_Utilisateurs_Admin extends javax.swing.JDialog {
 
     private C_ListeCourse leControl;
-    
+
     private LinkedHashMap<Integer, M_Users> lesUtils;
     private LinkedHashMap<Integer, M_Roles> lesRoles;
-    
+
     private DefaultTableModel dmDefaultTableModel;
-    
+
     private M_Users unUtilisateur;
     private M_Roles unRole;
-    
+
     private Object[] lesClesRoles;
-    
+
     private String nom, prenom, mail, role, mdp, commentaire;
     private int idUtilisateur, idRole;
+    private char modeGlobal;
+    private LocalDateTime email_verified_at;
 
     public V_Utilisateurs_Admin(java.awt.Frame parent, boolean modal, C_ListeCourse leControleur) {
         super(parent, modal);
@@ -44,25 +47,23 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
     public void afficher(LinkedHashMap<Integer, M_Users> lesUtils, LinkedHashMap<Integer, M_Roles> lesRoles) {
         this.lesUtils = lesUtils;
         this.lesRoles = lesRoles;
+
         int compteur = 0;
+
         this.setSize(650, 550);
         this.setLocationRelativeTo(null);
 
-        /*On peut aussi faire sans rowcount et sans compteutr en utilisant la mthode .addRow()*/
-        int size_lesUtils = lesUtils.size();
         dmDefaultTableModel = (DefaultTableModel) tb_utils.getModel();
-        dmDefaultTableModel.setRowCount(size_lesUtils);
-
-        M_Users unUser;
+        dmDefaultTableModel.setRowCount(lesUtils.size());
 
         for (int uneCle : lesUtils.keySet()) {
-            unUser = lesUtils.get(uneCle);
+            M_Users unUser = lesUtils.get(uneCle);
             tb_utils.setValueAt(unUser.getIdUtilisateur(), compteur, 0);
             tb_utils.setValueAt(unUser.getNom(), compteur, 1);
             tb_utils.setValueAt(unUser.getPrenom(), compteur, 2);
             compteur++;
         }
-        
+
         cb_role.removeAllItems();
 
         for (int uneCle : lesRoles.keySet()) {
@@ -71,14 +72,18 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
         }
         cb_role.setSelectedIndex(-1);
         lesClesRoles = lesRoles.keySet().toArray();
-        
-        remise_a_zero();
+
         this.setVisible(true);
     }
 
     public M_Users recuperer_unUtilisateur() {
-        M_Users unUtilisateur = lesUtils.get(dmDefaultTableModel.getValueAt(tb_utils.getSelectedRow(), 0));
-        return unUtilisateur;
+        int row = tb_utils.getSelectedRow();
+        if (row == -1) {
+            return null;
+        }
+
+        Integer id = (Integer) dmDefaultTableModel.getValueAt(row, 0);
+        return lesUtils.get(id);
     }
 
     public void details() {
@@ -90,21 +95,106 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
             tf_mail.setText(unUtilisateur.getEmail());
             tf_mdp.setText(unUtilisateur.getPassword());
             ta_commentaire.setText(unUtilisateur.getCommentaire());
-          
+
             unRole = lesRoles.get(unUtilisateur.getId_role());
             String leRole = unRole.getNom();
-            cb_role.setSelectedItem(leRole);   
+            cb_role.setSelectedItem(leRole);
         }
     }
-    
-        public void remise_a_zero() {
+
+    public void remise_a_zero() {
+
         tf_id.setText("");
         tf_nom.setText("");
         tf_prenom.setText("");
         tf_mail.setText("");
         tf_mdp.setText("");
-        cb_role.setSelectedIndex(-1);
         ta_commentaire.setText("");
+        cb_role.setSelectedIndex(-1);
+
+        tf_id.setVisible(true);
+        lb_id.setVisible(true);
+        bt_ajouter.setEnabled(true);
+        bt_supprimer.setEnabled(true);
+        bt_modifier.setEnabled(true);
+        bt_enregistrer.setEnabled(false);
+        bt_generer.setEnabled(false);
+        bt_annuler.setEnabled(false);
+        tf_mail.setEnabled(false);
+        tf_mdp.setEnabled(false);
+        tf_nom.setEnabled(false);
+        tf_prenom.setEnabled(false);
+        cb_role.setEnabled(false);
+        ta_commentaire.setEnabled(false);
+        tb_utils.setEnabled(true);
+        tb_utils.setRowSelectionAllowed(true);
+        tb_utils.setColumnSelectionAllowed(false);
+
+    }
+
+    public void ihm(char mode, LinkedHashMap<Integer, M_Users> lesUtils) throws SQLException {
+        modeGlobal = mode;
+
+        switch (mode) {
+            case 'C':
+                bt_enregistrer.setVisible(false);
+                bt_annuler.setVisible(false);
+                break;
+
+            case 'A':
+                tf_id.setVisible(false);
+                lb_id.setVisible(false);
+                tf_nom.setText("");
+                tf_prenom.setText("");
+                tf_mail.setText("");
+                tf_mdp.setText("");
+                ta_commentaire.setText("");
+                cb_role.setSelectedIndex(-1);
+
+                bt_ajouter.setEnabled(false);
+                bt_supprimer.setEnabled(false);
+                tb_utils.setEnabled(false);
+                bt_enregistrer.setEnabled(true);
+                bt_generer.setEnabled(true);
+                bt_annuler.setEnabled(true);
+                bt_modifier.setEnabled(false);
+                tf_mail.setEnabled(true);
+                tf_mdp.setEnabled(true);
+                tf_nom.setEnabled(true);
+                tf_prenom.setEnabled(true);
+                cb_role.setEnabled(true);
+                ta_commentaire.setEnabled(true);
+                // désactiver la sélection du tableau
+                tb_utils.clearSelection();
+                tb_utils.setRowSelectionAllowed(false);
+                tb_utils.setColumnSelectionAllowed(false);
+                tb_utils.setEnabled(false);
+                break;
+
+            case 'U':
+                bt_ajouter.setEnabled(false);
+                bt_supprimer.setEnabled(false);
+                tb_utils.setEnabled(false);
+                bt_enregistrer.setEnabled(true);
+                bt_generer.setEnabled(true);
+                bt_annuler.setEnabled(true);
+                tf_mail.setEnabled(true);
+                tf_mdp.setEnabled(true);
+                tf_nom.setEnabled(true);
+                tf_prenom.setEnabled(true);
+                cb_role.setEnabled(true);
+                ta_commentaire.setEnabled(true);
+                tb_utils.setEnabled(false);
+                break;
+
+            case 'D':
+                M_Users lUtil = recuperer_unUtilisateur();
+                leControl.supprimer_util(lUtil);
+                remise_a_zero();
+                break;
+
+        }
+
     }
 
     /**
@@ -125,8 +215,7 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
         tf_id = new javax.swing.JTextField();
         tf_nom = new javax.swing.JTextField();
         tf_prenom = new javax.swing.JTextField();
-        tf_mdp = new javax.swing.JTextField();
-        bt_genrer = new javax.swing.JButton();
+        bt_generer = new javax.swing.JButton();
         lb_mail = new javax.swing.JLabel();
         tf_mail = new javax.swing.JTextField();
         bt_enregistrer = new javax.swing.JButton();
@@ -140,6 +229,7 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
         lb_commentaire = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
         ta_commentaire = new javax.swing.JTextArea();
+        tf_mdp = new javax.swing.JPasswordField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Application Liste de courses | Gestions des utilisateurs");
@@ -178,6 +268,11 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
         getContentPane().add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(27, 27, 358, 226));
 
         bt_modifier.setText("Modifier");
+        bt_modifier.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bt_modifierActionPerformed(evt);
+            }
+        });
         getContentPane().add(bt_modifier, new org.netbeans.lib.awtextra.AbsoluteConstraints(435, 90, 85, -1));
 
         bt_supprimer.setText("Supprimer");
@@ -195,19 +290,32 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
             }
         });
         getContentPane().add(bt_ajouter, new org.netbeans.lib.awtextra.AbsoluteConstraints(435, 160, 85, -1));
-        getContentPane().add(tf_id, new org.netbeans.lib.awtextra.AbsoluteConstraints(74, 265, 208, -1));
-        getContentPane().add(tf_nom, new org.netbeans.lib.awtextra.AbsoluteConstraints(74, 311, 208, -1));
-        getContentPane().add(tf_prenom, new org.netbeans.lib.awtextra.AbsoluteConstraints(74, 351, 208, -1));
-        getContentPane().add(tf_mdp, new org.netbeans.lib.awtextra.AbsoluteConstraints(407, 265, 162, -1));
 
-        bt_genrer.setText("Générer");
-        getContentPane().add(bt_genrer, new org.netbeans.lib.awtextra.AbsoluteConstraints(453, 295, -1, -1));
+        tf_id.setDisabledTextColor(new java.awt.Color(0, 0, 0));
+        tf_id.setEnabled(false);
+        getContentPane().add(tf_id, new org.netbeans.lib.awtextra.AbsoluteConstraints(74, 265, 208, -1));
+
+        tf_nom.setDisabledTextColor(new java.awt.Color(0, 0, 0));
+        tf_nom.setEnabled(false);
+        getContentPane().add(tf_nom, new org.netbeans.lib.awtextra.AbsoluteConstraints(74, 311, 208, -1));
+
+        tf_prenom.setDisabledTextColor(new java.awt.Color(0, 0, 0));
+        tf_prenom.setEnabled(false);
+        getContentPane().add(tf_prenom, new org.netbeans.lib.awtextra.AbsoluteConstraints(74, 351, 208, -1));
+
+        bt_generer.setText("Générer");
+        bt_generer.setEnabled(false);
+        getContentPane().add(bt_generer, new org.netbeans.lib.awtextra.AbsoluteConstraints(453, 295, -1, -1));
 
         lb_mail.setText("Mail :");
         getContentPane().add(lb_mail, new org.netbeans.lib.awtextra.AbsoluteConstraints(11, 400, 37, -1));
+
+        tf_mail.setDisabledTextColor(new java.awt.Color(0, 0, 0));
+        tf_mail.setEnabled(false);
         getContentPane().add(tf_mail, new org.netbeans.lib.awtextra.AbsoluteConstraints(74, 397, 208, -1));
 
         bt_enregistrer.setText("Enregistrer");
+        bt_enregistrer.setEnabled(false);
         bt_enregistrer.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 bt_enregistrerActionPerformed(evt);
@@ -216,6 +324,7 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
         getContentPane().add(bt_enregistrer, new org.netbeans.lib.awtextra.AbsoluteConstraints(181, 456, -1, -1));
 
         bt_annuler.setText("Annuler");
+        bt_annuler.setEnabled(false);
         bt_annuler.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 bt_annulerActionPerformed(evt);
@@ -223,6 +332,7 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
         });
         getContentPane().add(bt_annuler, new org.netbeans.lib.awtextra.AbsoluteConstraints(318, 456, -1, -1));
 
+        cb_role.setEnabled(false);
         getContentPane().add(cb_role, new org.netbeans.lib.awtextra.AbsoluteConstraints(407, 324, 154, -1));
 
         lb_role.setText("Role :");
@@ -245,9 +355,14 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
 
         ta_commentaire.setColumns(20);
         ta_commentaire.setRows(5);
+        ta_commentaire.setDisabledTextColor(new java.awt.Color(0, 0, 0));
+        ta_commentaire.setEnabled(false);
         jScrollPane2.setViewportView(ta_commentaire);
 
         getContentPane().add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 370, 196, -1));
+
+        tf_mdp.setText("jPasswordField1");
+        getContentPane().add(tf_mdp, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 260, 150, -1));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -264,51 +379,75 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
         if (tb_utils.getSelectedRowCount() != 1) {
             op_message.showMessageDialog(this, "Sélectionner 1 utilisateur !", "Sélection obligatoire", op_message.WARNING_MESSAGE);
         } else {
-            
-                int result = op_message.showConfirmDialog(op_message, "Voulez vous confirmer la suppression de l'utilisateur " + tb_utils.getValueAt(tb_utils.getSelectedRow(), 0) + " ?");
-                if (result == op_message.YES_OPTION) {
-                    try {
-                        leControl.supprimer_util(recuperer_unUtilisateur());
-                    } catch (SQLException ex) {
-                        Logger.getLogger(V_Utilisateurs_Admin.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                };
-                System.out.println(op_message.getInputValue());
 
-          
+            int result = op_message.showConfirmDialog(op_message, "Voulez vous confirmer la suppression de l'utilisateur " + tb_utils.getValueAt(tb_utils.getSelectedRow(), 0) + " ?");
+            if (result == op_message.YES_OPTION) {
+                try {
+                    this.ihm('D', lesUtils);
+                } catch (SQLException ex) {
+                    Logger.getLogger(V_Utilisateurs_Admin.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            };
+            System.out.println(op_message.getInputValue());
+
         }
 
     }//GEN-LAST:event_bt_supprimerActionPerformed
 
     private void bt_ajouterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_ajouterActionPerformed
-        remise_a_zero();
+        try {
+            this.ihm('A', lesUtils);
+        } catch (SQLException ex) {
+            Logger.getLogger(V_Utilisateurs_Admin.class.getName()).log(Level.SEVERE, null, ex);
+
+        }
     }//GEN-LAST:event_bt_ajouterActionPerformed
 
     private void bt_enregistrerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_enregistrerActionPerformed
         nom = tf_nom.getText();
         prenom = tf_prenom.getText();
-
-        // Role
-        if (cb_role.getSelectedIndex() == -1) {
-            op_message.showMessageDialog(this, "Veuillez sélectionner un rôle", "Champ obligatoire", op_message.WARNING_MESSAGE);
-            return;
-        }
-        idRole = (int) lesClesRoles[cb_role.getSelectedIndex()];
-        mdp = BCrypt.withDefaults().hashToString(12, tf_mdp.getText().toCharArray());
         mail = tf_mail.getText();
-        commentaire = ta_commentaire.getText();
-  
-        try {
-            leControl.ajouter_util(nom, prenom, mail, mdp, commentaire, idRole);
-            remise_a_zero();
-        } catch (SQLException ex) {
-            Logger.getLogger(V_Utilisateurs_Admin.class.getName()).log(Level.SEVERE, null, ex);
+        commentaire = tf_mdp.getText();
+        mdp = BCrypt.withDefaults().hashToString(12, tf_mdp.getText().toCharArray());
+        if (cb_role.getSelectedIndex() != -1) {
+            idRole = (int) lesClesRoles[cb_role.getSelectedIndex()];
+        }
+        if (modeGlobal == 'A') {
+            try {
+                remise_a_zero();
+                leControl.ajouter_util(nom, prenom, mail, mdp, commentaire, idRole);
+            } catch (SQLException ex) {
+                Logger.getLogger(V_Utilisateurs_Admin.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        } else if (modeGlobal == 'U') {
+            try {
+                idUtilisateur = Integer.valueOf(tf_id.getText());
+                email_verified_at = unUtilisateur.getEmail_verified_at();
+                remise_a_zero();
+                leControl.update_util(idUtilisateur, nom, prenom, mail, mdp, commentaire, idRole, email_verified_at);
+            } catch (SQLException ex) {
+                Logger.getLogger(V_Utilisateurs_Admin.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }//GEN-LAST:event_bt_enregistrerActionPerformed
 
     private void bt_annulerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_annulerActionPerformed
         remise_a_zero();
     }//GEN-LAST:event_bt_annulerActionPerformed
+
+    private void bt_modifierActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_modifierActionPerformed
+        if (tb_utils.getSelectedRowCount() != 1) {
+            op_message.showMessageDialog(this, "Sélectionner 1 utilisateur !", "Sélection obligatoire", op_message.WARNING_MESSAGE);
+        } else {
+            try {
+                this.ihm('U', lesUtils);
+                modeGlobal = 'U';
+            } catch (SQLException ex) {
+                Logger.getLogger(V_Utilisateurs_Admin.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_bt_modifierActionPerformed
 
     /**
      * @param args the command line arguments
@@ -356,7 +495,7 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
     private javax.swing.JButton bt_ajouter;
     private javax.swing.JButton bt_annuler;
     private javax.swing.JButton bt_enregistrer;
-    private javax.swing.JButton bt_genrer;
+    private javax.swing.JButton bt_generer;
     private javax.swing.JButton bt_modifier;
     private javax.swing.JButton bt_supprimer;
     private javax.swing.JComboBox<String> cb_role;
@@ -374,7 +513,7 @@ public class V_Utilisateurs_Admin extends javax.swing.JDialog {
     private javax.swing.JTable tb_utils;
     private javax.swing.JTextField tf_id;
     private javax.swing.JTextField tf_mail;
-    private javax.swing.JTextField tf_mdp;
+    private javax.swing.JPasswordField tf_mdp;
     private javax.swing.JTextField tf_nom;
     private javax.swing.JTextField tf_prenom;
     // End of variables declaration//GEN-END:variables

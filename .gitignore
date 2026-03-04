@@ -1,6 +1,7 @@
 src/pj_listecourse/Cl_Connection.java
 src/pj_listecourse/Db_mariadb.java
 /build
+/nbproject
 
 # Compiled class file
 *.class
@@ -27,3 +28,6 @@ src/pj_listecourse/Db_mariadb.java
 hs_err_pid*
 replay_pid*
 /dist/
+
+
+

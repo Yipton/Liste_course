@@ -166,57 +166,59 @@ public class M_Situer {
                 + ", commentaire=" + commentaire
                 + "}";
     }
-
-    public static void main(String[] args) throws Exception {
-        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
-        // INSERT
-        M_Situer situer1 = new M_Situer(
-                base,
-                3, // idRangement (doit exister)
-                12, // idArticle   (doit exister)
-                1, // ordre
-                "Étagère du haut",
-                true
-        );
-        System.out.println("INSERT OK : " + situer1);
-
-        // LECTURE
-        M_Situer situer2 = new M_Situer(
-                base,
-                3,
-                12,
-                0,
-                "",
-                false
-        );
-        System.out.println("LECTURE OK : " + situer2);
-
-        // UPDATE
-        situer2.setOrdre(2);
-        situer2.setCommentaire("Deuxième étagère");
-        situer2.update();
-        System.out.println("UPDATE OK");
-
-        // RELECTURE
-        M_Situer situer3 = new M_Situer(
-                base,
-                3,
-                12,
-                0,
-                "",
-                false
-        );
-        System.out.println("RELECTURE : " + situer3);
-
-        // GET RECORDS
-        System.out.println("LISTE COMPLETE :");
-        LinkedHashMap<String, M_Situer> lesSituer = M_Situer.getRecords(base);
-        for (String cle : lesSituer.keySet()) {
-            System.out.println(lesSituer.get(cle));
-        }
-
-        // DELETE
-        situer3.delete();
-        System.out.println("DELETE OK");
-    }
+//
+//--------------------------- Tests -------------------------------------------------------------
+//
+//    public static void main(String[] args) throws Exception {
+//        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
+//        // INSERT
+//        M_Situer situer1 = new M_Situer(
+//                base,
+//                3, // idRangement (doit exister)
+//                12, // idArticle   (doit exister)
+//                1, // ordre
+//                "Étagère du haut",
+//                true
+//        );
+//        System.out.println("INSERT OK : " + situer1);
+//
+//        // LECTURE
+//        M_Situer situer2 = new M_Situer(
+//                base,
+//                3,
+//                12,
+//                0,
+//                "",
+//                false
+//        );
+//        System.out.println("LECTURE OK : " + situer2);
+//
+//        // UPDATE
+//        situer2.setOrdre(2);
+//        situer2.setCommentaire("Deuxième étagère");
+//        situer2.update();
+//        System.out.println("UPDATE OK");
+//
+//        // RELECTURE
+//        M_Situer situer3 = new M_Situer(
+//                base,
+//                3,
+//                12,
+//                0,
+//                "",
+//                false
+//        );
+//        System.out.println("RELECTURE : " + situer3);
+//
+//        // GET RECORDS
+//        System.out.println("LISTE COMPLETE :");
+//        LinkedHashMap<String, M_Situer> lesSituer = M_Situer.getRecords(base);
+//        for (String cle : lesSituer.keySet()) {
+//            System.out.println(lesSituer.get(cle));
+//        }
+//
+//        // DELETE
+//        situer3.delete();
+//        System.out.println("DELETE OK");
+//    }
 }

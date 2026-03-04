@@ -204,10 +204,27 @@ public class V_Main extends javax.swing.JFrame {
 
         mi_faire_liste.setText("Faire une liste de course");
         mi_faire_liste.setName("mi_faire_liste"); // NOI18N
+        mi_faire_liste.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mi_faire_listeActionPerformed(evt);
+            }
+        });
         mn_gestion.add(mi_faire_liste);
 
         mi_consulter_listes.setText("Consulter les listes de courses");
         mi_consulter_listes.setName("mi_consulter_listes"); // NOI18N
+        mi_consulter_listes.addHierarchyBoundsListener(new java.awt.event.HierarchyBoundsListener() {
+            public void ancestorMoved(java.awt.event.HierarchyEvent evt) {
+            }
+            public void ancestorResized(java.awt.event.HierarchyEvent evt) {
+                mi_consulter_listesAncestorResized(evt);
+            }
+        });
+        mi_consulter_listes.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mi_consulter_listesActionPerformed(evt);
+            }
+        });
         mn_gestion.add(mi_consulter_listes);
 
         mb_menu.add(mn_gestion);
@@ -305,6 +322,26 @@ public class V_Main extends javax.swing.JFrame {
             Logger.getLogger(V_Main.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_mi_gestion_utilActionPerformed
+
+    private void mi_consulter_listesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mi_consulter_listesActionPerformed
+        try {
+            leControl.aff_V_Listes_Ben("read_lists");
+        } catch (SQLException ex) {
+            Logger.getLogger(V_Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_mi_consulter_listesActionPerformed
+
+    private void mi_consulter_listesAncestorResized(java.awt.event.HierarchyEvent evt) {//GEN-FIRST:event_mi_consulter_listesAncestorResized
+
+    }//GEN-LAST:event_mi_consulter_listesAncestorResized
+
+    private void mi_faire_listeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mi_faire_listeActionPerformed
+        try {
+            leControl.aff_V_Listes_Ben("create_list");
+        } catch (SQLException ex) {
+            Logger.getLogger(V_Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_mi_faire_listeActionPerformed
 
     public void afficherErreur(String msg) {
         op_message.showMessageDialog(this, msg, "Erreur", op_message.ERROR_MESSAGE);

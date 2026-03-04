@@ -171,58 +171,58 @@ public class M_Utiliser {
     }
 
     // ---------------- TESTS ----------------
-    public static void main(String[] args) throws Exception {
-        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
-
-        // INSERT
-        M_Utiliser utiliser1 = new M_Utiliser(
-                base,
-                26, // idBeneficiaire (doit exister dans mcd_users)
-                3, // idRangement   (doit exister dans mcd_rangements)
-                1, // ordre
-                "Cuisine",
-                true
-        );
-        System.out.println("INSERT OK : " + utiliser1);
-
-        // LECTURE (sans insert)
-        M_Utiliser utiliser2 = new M_Utiliser(
-                base,
-                26,
-                3,
-                0,
-                "",
-                false
-        );
-        System.out.println("LECTURE OK : " + utiliser2);
-
-        // UPDATE
-        utiliser2.setOrdre(2);
-        utiliser2.setCommentaire("Placard haut");
-        utiliser2.update();
-        System.out.println("UPDATE OK");
-
-        // RELECTURE
-        M_Utiliser utiliser3 = new M_Utiliser(
-                base,
-                26,
-                3,
-                0,
-                "",
-                false
-        );
-        System.out.println("RELECTURE : " + utiliser3);
-
-        // GET RECORDS
-        System.out.println("LISTE COMPLETE :");
-        LinkedHashMap<String, M_Utiliser> lesUtiliser = M_Utiliser.getRecords(base);
-        for (String cle : lesUtiliser.keySet()) {
-            System.out.println(lesUtiliser.get(cle));
-        }
-
-        // DELETE
-        utiliser3.delete();
-        System.out.println("DELETE OK");
-
-    }
+//    public static void main(String[] args) throws Exception {
+//        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
+//
+//        // INSERT
+//        M_Utiliser utiliser1 = new M_Utiliser(
+//                base,
+//                26, // idBeneficiaire (doit exister dans mcd_users)
+//                3, // idRangement   (doit exister dans mcd_rangements)
+//                1, // ordre
+//                "Cuisine",
+//                true
+//        );
+//        System.out.println("INSERT OK : " + utiliser1);
+//
+//        // LECTURE (sans insert)
+//        M_Utiliser utiliser2 = new M_Utiliser(
+//                base,
+//                26,
+//                3,
+//                0,
+//                "",
+//                false
+//        );
+//        System.out.println("LECTURE OK : " + utiliser2);
+//
+//        // UPDATE
+//        utiliser2.setOrdre(2);
+//        utiliser2.setCommentaire("Placard haut");
+//        utiliser2.update();
+//        System.out.println("UPDATE OK");
+//
+//        // RELECTURE
+//        M_Utiliser utiliser3 = new M_Utiliser(
+//                base,
+//                26,
+//                3,
+//                0,
+//                "",
+//                false
+//        );
+//        System.out.println("RELECTURE : " + utiliser3);
+//
+//        // GET RECORDS
+//        System.out.println("LISTE COMPLETE :");
+//        LinkedHashMap<String, M_Utiliser> lesUtiliser = M_Utiliser.getRecords(base);
+//        for (String cle : lesUtiliser.keySet()) {
+//            System.out.println(lesUtiliser.get(cle));
+//        }
+//
+//        // DELETE
+//        utiliser3.delete();
+//        System.out.println("DELETE OK");
+//
+//    }
 }
