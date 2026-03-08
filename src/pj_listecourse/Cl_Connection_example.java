@@ -6,7 +6,7 @@ package pj_listecourse;
 
 /**
  *
- * @author ninis
+ * @author Yipton
  */
 public class Cl_Connection_example {
 

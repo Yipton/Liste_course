@@ -4,16 +4,15 @@
  */
 package pj_listecourse;
 
+/**
+ *
+ * @author Yipton
+ */
 import java.sql.SQLException;
-import org.mariadb.jdbc.client.result.ResultSetMetaData;
 import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
-/**
- *
- * @author ninis
- */
 public class M_Autorisations {
 
     private Db_mariadb db;
@@ -21,6 +20,9 @@ public class M_Autorisations {
     private String code, description;
     private LocalDateTime created_at, updated_at;
 
+    // -------------------------
+    // Constructeur lecture directe
+    // -------------------------
     public M_Autorisations(Db_mariadb db, int idAutorisation, String code, String description) {
         this.db = db;
         this.idAutorisation = idAutorisation;
@@ -28,13 +30,16 @@ public class M_Autorisations {
         this.description = description;
     }
 
+    // -------------------------
+    // Constructeur INSERT
+    // -------------------------
     public M_Autorisations(Db_mariadb db, String code, String description) throws SQLException {
         this.db = db;
         this.code = code;
         this.description = description;
 
-        String sql = "INSERT INTO mcd_autorisations (code, description) VALUES ('" + code + "', '" + description + "')";
-        db.sqlExec(sql);
+        String sql = "INSERT INTO mcd_autorisations (code, description) VALUES (?, ?)";
+        db.sqlExec(sql, code, description);
         ResultSet res;
         res = db.sqlLastId();
         res.first();
@@ -42,14 +47,17 @@ public class M_Autorisations {
         res.close();
     }
 
+    // -------------------------
+    // Constructeur SELECT par ID
+    // -------------------------
     public M_Autorisations(Db_mariadb db, int idAutorisation) throws SQLException {
         this.db = db;
         this.idAutorisation = idAutorisation;
 
-        String sql = "SELECT * FROM mcd_autorisations WHERE idAutorisation ='" + idAutorisation + "';";
+        String sql = "SELECT * FROM mcd_autorisations WHERE idAutorisation = ?";
 
         ResultSet res;
-        res = db.sqlSelect(sql);
+        res = db.sqlSelect(sql, idAutorisation);
         res.first();
 
         this.code = res.getString("code");
@@ -58,6 +66,9 @@ public class M_Autorisations {
         res.close();
     }
 
+    // -------------------------
+    // Getters
+    // -------------------------
     public int getIdAutorisation() {
         return idAutorisation;
     }
@@ -70,6 +81,9 @@ public class M_Autorisations {
         return description;
     }
 
+    // -------------------------
+    // Setters
+    // -------------------------
     public void setCode(String code) {
         this.code = code;
     }
@@ -78,32 +92,41 @@ public class M_Autorisations {
         this.description = description;
     }
 
+    // -------------------------
+    // UPDATE
+    // -------------------------
     public void update() throws SQLException {
-        String sql = "UPDATE mcd_autorisations SET code='" + code + "', description='" + description + "' WHERE idAutorisation = '" + idAutorisation + "';";
-        db.sqlExec(sql);
+        String sql = "UPDATE mcd_autorisations SET code= ?, description= ? WHERE idAutorisation = ?";
+        db.sqlExec(sql, code, description, idAutorisation);
     }
 
+    // -------------------------
+    // DELETE
+    // -------------------------
     public void delete() throws SQLException {
-        String sql = "DELETE FROM mcd_autorisations WHERE idAutorisation='" + idAutorisation + "';";
-        db.sqlExec(sql);
+        String sql = "DELETE FROM mcd_autorisations WHERE idAutorisation= ?";
+        db.sqlExec(sql, idAutorisation);
     }
 
-    public static LinkedHashMap<Integer, M_Autorisations> getRecords(Db_mariadb db, String clauseWhere) throws SQLException {
-        LinkedHashMap<Integer, M_Autorisations> lesAutorisations = new LinkedHashMap();
-        M_Autorisations uneAutorisation;
+    // -------------------------
+    // SELECT MULTI (hybride sécurisé)
+    // -------------------------
+    public static LinkedHashMap<Integer, M_Autorisations> getRecords(
+            Db_mariadb db,
+            String clauseWhere,
+            Object... params
+    ) throws SQLException {
+        LinkedHashMap<Integer, M_Autorisations> lesAutorisations = new LinkedHashMap<>();
 
-        int cle;
-        String code, description;
-
-        String sql = "SELECT * FROM mcd_autorisations WHERE " + clauseWhere + ";";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_autorisations WHERE " + clauseWhere;
+        ResultSet res = db.sqlSelect(sql, params);
 
         while (res.next()) {
-            cle = res.getInt("idAutorisation");
-            code = res.getString("code");
-            description = res.getString("description");
+            int cle = res.getInt("idAutorisation");
+            String code = res.getString("code");
+            String description = res.getString("description");
 
-            uneAutorisation = new M_Autorisations(db, cle, code, description);
+            M_Autorisations uneAutorisation = new M_Autorisations(db, cle, code, description);
             lesAutorisations.put(cle, uneAutorisation);
         }
         res.close();
@@ -114,39 +137,83 @@ public class M_Autorisations {
         return getRecords(db, "1 = 1");
     }
 
+    // -------------------------
+    // toString
+    // -------------------------
     @Override
     public String toString() {
         return "M_Autorisation{" + "id=" + idAutorisation + ", code='" + code + "', description='" + description + "'}'";
     }
 
-    /*Tests*/
+    // -------------------------
+    // Tests
+    // -------------------------
     public static void main(String[] args) throws Exception {
 
         Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
 
-//        M_Autorisation uneAutorisation1 = new M_Autorisation(base, 1);
-//        System.out.println(uneAutorisation1.toString());
-//
-//        M_Autorisation uneAutorisation2 = new M_Autorisation(base, "test", "ceci est un test");
-//        System.out.println(uneAutorisation2.toString());
-//
-//        M_Autorisation uneAutorisation3 = new M_Autorisation(base, 17);
-//        uneAutorisation3.setCode("TEST_MODIF");
-//        uneAutorisation3.setDescription("description modifiée");
-//        uneAutorisation3.update();
-//        System.out.println(uneAutorisation3.toString());
-//
-//        M_Autorisation uneAutorisation4 = new M_Autorisation(base, 17);
-//        uneAutorisation4.delete();
-//
-//        LinkedHashMap<Integer, M_Autorisation> lesAutorisations = M_Autorisation.getRecords(base);
-//        for(int uneCle : lesAutorisations.keySet()){
-//            System.out.println(lesAutorisations.get(uneCle));
-//        }
-//
-//        LinkedHashMap<Integer, M_Autorisation> lesRoles = M_Autorisation.getRecords(base, "code = 'mi_Mon_compte'");
-//        for (int uneCle : lesRoles.keySet()) {
-//            System.out.println(lesRoles.get(uneCle));
-//        }
+        // ===========================
+        // TEST 1 : SELECT par ID
+        // ===========================
+        System.out.println("=== TEST 1 : SELECT par ID ===");
+        M_Autorisations auth1 = new M_Autorisations(base, 1);
+        System.out.println(auth1);
+
+        // ===========================
+        // TEST 2 : INSERT
+        // ===========================
+        System.out.println("\n=== TEST 2 : INSERT ===");
+        M_Autorisations auth2 = new M_Autorisations(base, "TEST_CODE", "Ceci est un test");
+        System.out.println("Nouvelle autorisation créée : " + auth2);
+
+        // ===========================
+        // TEST 3 : UPDATE
+        // ===========================
+        System.out.println("\n=== TEST 3 : UPDATE ===");
+        auth2.setCode("TEST_MODIFIE");
+        auth2.setDescription("Description modifiée");
+        auth2.update();
+        System.out.println("Après update : " + auth2);
+
+        // ===========================
+        // TEST 4 : getRecords (tous)
+        // ===========================
+        System.out.println("\n=== TEST 4 : getRecords (tous) ===");
+        LinkedHashMap<Integer, M_Autorisations> toutes = M_Autorisations.getRecords(base);
+        System.out.println("Nombre d'autorisations : " + toutes.size());
+        for (M_Autorisations a : toutes.values()) {
+            System.out.println("  " + a);
+        }
+
+        // ===========================
+        // TEST 5 : getRecords avec filtre (hybride sécurisé)
+        // ===========================
+        System.out.println("\n=== TEST 5 : getRecords avec filtre (hybride sécurisé) ===");
+        String recherche = "TEST";
+        LinkedHashMap<Integer, M_Autorisations> filtrees = M_Autorisations.getRecords(base, "code LIKE ?", "%" + recherche + "%");
+        System.out.println("Recherche '" + recherche + "' : " + filtrees.size() + " résultat(s)");
+        for (M_Autorisations a : filtrees.values()) {
+            System.out.println("  " + a);
+        }
+
+        // ===========================
+        // TEST 6 : DELETE
+        // ===========================
+        System.out.println("\n=== TEST 6 : DELETE ===");
+        System.out.println("Suppression de : " + auth2);
+        auth2.delete();
+        System.out.println("Autorisation supprimée !");
+
+        // ===========================
+        // TEST 7 : Vérification après suppression
+        // ===========================
+        System.out.println("\n=== TEST 7 : Vérification après suppression ===");
+        LinkedHashMap<Integer, M_Autorisations> restantes = M_Autorisations.getRecords(base);
+        System.out.println("Nombre d'autorisations restantes : " + restantes.size());
+        for (M_Autorisations a : restantes.values()) {
+            System.out.println("  " + a);
+        }
+
+        System.out.println("\n=== TOUS LES TESTS SONT VALIDÉS ===");
     }
 }

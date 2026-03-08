@@ -4,16 +4,17 @@
  */
 package pj_listecourse;
 
+/**
+ *
+ * @author Yipton
+ */
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
-/**
- *
- * @author ninis
- */
 public class M_Marques {
+
     private Db_mariadb db;
     private int id;
     private String nom;
@@ -21,7 +22,7 @@ public class M_Marques {
     private LocalDateTime created_at, updated_at;
 
     // -------------------------
-    // Constructeur "lecture directe"
+    // Constructeur lecture directe
     // -------------------------
     public M_Marques(Db_mariadb db, int id, String nom, String commentaire) {
         this.db = db;
@@ -38,10 +39,8 @@ public class M_Marques {
         this.nom = nom;
         this.commentaire = commentaire;
 
-        String sql = "INSERT INTO mcd_marques (nom, commentaire) VALUES ('"
-                + nom + "', '" + commentaire + "');";
-
-        db.sqlExec(sql);
+        String sql = "INSERT INTO mcd_marques (nom, commentaire) VALUES (?, ?)";
+        db.sqlExec(sql, nom, commentaire);
 
         ResultSet res = db.sqlLastId();
         res.first();
@@ -56,8 +55,8 @@ public class M_Marques {
         this.db = db;
         this.id = id;
 
-        String sql = "SELECT * FROM mcd_marques WHERE id=" + id + ";";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_marques WHERE id = ?";
+        ResultSet res = db.sqlSelect(sql, id);
         res.first();
 
         this.nom = res.getString("nom");
@@ -106,58 +105,59 @@ public class M_Marques {
     // UPDATE
     // -------------------------
     public void update() throws SQLException {
-        String sql = "UPDATE mcd_marques SET "
-                + "nom='" + nom + "', "
-                + "commentaire='" + commentaire + "'"
-                + " WHERE id=" + id + ";";
-
-        db.sqlExec(sql);
+        String sql = "UPDATE mcd_marques SET nom = ?, commentaire = ? WHERE id = ?";
+        db.sqlExec(sql, nom, commentaire, id);
     }
 
     // -------------------------
     // DELETE
     // -------------------------
     public void delete() throws SQLException {
-        String sql = "DELETE FROM mcd_marques WHERE id=" + id + ";";
-        db.sqlExec(sql);
+        String sql = "DELETE FROM mcd_marques WHERE id = ?";
+        db.sqlExec(sql, id);
     }
 
     // -------------------------
-    // SELECT MULTI
+    // SELECT MULTI (hybride sécurisé)
     // -------------------------
-    public static LinkedHashMap<Integer, M_Marques> getRecords(Db_mariadb db, String clauseWhere) throws SQLException {
+    public static LinkedHashMap<Integer, M_Marques> getRecords(
+            Db_mariadb db,
+            String clauseWhere,
+            Object... params
+    ) throws SQLException {
 
-        LinkedHashMap<Integer, M_Marques> lesArticles = new LinkedHashMap<>();
-        M_Marques unArticle;
+        LinkedHashMap<Integer, M_Marques> lesMarques = new LinkedHashMap<>();
 
-        int cle;
-        String nom, commentaire;
-
-        String sql = "SELECT * FROM mcd_marques WHERE " + clauseWhere + " ORDER BY nom;";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_marques WHERE " + clauseWhere + " ORDER BY nom";
+        ResultSet res = db.sqlSelect(sql, params);
 
         while (res.next()) {
-            cle = res.getInt("id");
-            nom = res.getString("nom");
-            commentaire = res.getString("commentaire");
+            int cle = res.getInt("id");
+            String nom = res.getString("nom");
+            String commentaire = res.getString("commentaire");
 
-            unArticle = new M_Marques(db, cle, nom, commentaire);
-            lesArticles.put(cle, unArticle);
+            M_Marques uneMarque = new M_Marques(db, cle, nom, commentaire);
+            lesMarques.put(cle, uneMarque);
         }
         res.close();
-        return lesArticles;
+        return lesMarques;
     }
 
     public static LinkedHashMap<Integer, M_Marques> getRecords(Db_mariadb db) throws SQLException {
         return getRecords(db, "1 = 1");
     }
 
+    // -------------------------
+    // toString
+    // -------------------------
     @Override
     public String toString() {
-        return "M_Marques{" + "id=" + id + ", nom='" + nom + "', commentaire='" + commentaire + "'}";
+        return "M_Marques{id=" + id + ", nom='" + nom + "', commentaire='" + commentaire + "'}";
     }
 
-    /* Tests */
+    // -------------------------
+    // Tests
+    // -------------------------
     public static void main(String[] args) throws Exception {
 
         Db_mariadb base = new Db_mariadb(
@@ -166,23 +166,68 @@ public class M_Marques {
                 Cl_Connection.password
         );
 
-//        M_Marques a1 = new M_Marques(base, 1);
-//        System.out.println(a1);
-//
-//        M_Marques a2 = new M_Marques(base, "Céréales", "Test insertion");
-//        System.out.println(a2);
-//
-//        M_Marques a3 = new M_Marques(base, a2.getId());
-//        a3.setNom("Céréales modifiées");
-//        a3.setCommentaire("Commentaire modifié");
-//        a3.update();
-//        System.out.println(a3);
-//
-//        LinkedHashMap<Integer, M_Marques> lesArticles = M_Marques.getRecords(base);
-//        for (int cle : lesArticles.keySet()) {
-//            System.out.println(lesArticles.get(cle));
-//        }
-//
-//        a3.delete();
+        // ===========================
+        // TEST 1 : SELECT par ID
+        // ===========================
+        System.out.println("=== TEST 1 : SELECT par ID ===");
+        M_Marques m1 = new M_Marques(base, 1);
+        System.out.println(m1);
+
+        // ===========================
+        // TEST 2 : INSERT
+        // ===========================
+        System.out.println("\n=== TEST 2 : INSERT ===");
+        M_Marques m2 = new M_Marques(base, "Marque test", "Test insertion");
+        System.out.println("Nouvelle marque créée : " + m2);
+
+        // ===========================
+        // TEST 3 : UPDATE
+        // ===========================
+        System.out.println("\n=== TEST 3 : UPDATE ===");
+        m2.setNom("Marque test modifiée");
+        m2.setCommentaire("Commentaire modifié");
+        m2.update();
+        System.out.println("Après update : " + m2);
+
+        // ===========================
+        // TEST 4 : getRecords (tous)
+        // ===========================
+        System.out.println("\n=== TEST 4 : getRecords (tous) ===");
+        LinkedHashMap<Integer, M_Marques> toutes = M_Marques.getRecords(base);
+        System.out.println("Nombre de marques : " + toutes.size());
+        for (M_Marques m : toutes.values()) {
+            System.out.println("  " + m);
+        }
+
+        // ===========================
+        // TEST 5 : getRecords avec filtre (hybride sécurisé)
+        // ===========================
+        System.out.println("\n=== TEST 5 : getRecords avec filtre ===");
+        String recherche = "test";
+        LinkedHashMap<Integer, M_Marques> filtrees = M_Marques.getRecords(base, "nom LIKE ?", "%" + recherche + "%");
+        System.out.println("Recherche '" + recherche + "' : " + filtrees.size() + " résultat(s)");
+        for (M_Marques m : filtrees.values()) {
+            System.out.println("  " + m);
+        }
+
+        // ===========================
+        // TEST 6 : DELETE
+        // ===========================
+        System.out.println("\n=== TEST 6 : DELETE ===");
+        System.out.println("Suppression de : " + m2);
+        m2.delete();
+        System.out.println("Marque supprimée !");
+
+        // ===========================
+        // TEST 7 : Vérification après suppression
+        // ===========================
+        System.out.println("\n=== TEST 7 : Vérification après suppression ===");
+        LinkedHashMap<Integer, M_Marques> restantes = M_Marques.getRecords(base);
+        System.out.println("Nombre de marques restantes : " + restantes.size());
+        for (M_Marques m : restantes.values()) {
+            System.out.println("  " + m);
+        }
+
+        System.out.println("\n=== TOUS LES TESTS SONT VALIDÉS ===");
     }
 }

@@ -17,7 +17,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 
 /**
  *
- * @author ninis
+ * @author Yipton
  */
 public class V_Utilisateurs_Admin extends javax.swing.JDialog {
 

@@ -6,12 +6,7 @@ package pj_listecourse;
 
 /**
  *
- * @author ninis
- */
-
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * @author Yipton
  */
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -20,7 +15,7 @@ import java.util.LinkedHashMap;
 
 /**
  *
- * @author ninis
+ * @author Yipton
  */
 public class M_Articles {
 
@@ -48,10 +43,8 @@ public class M_Articles {
         this.nom = nom;
         this.commentaire = commentaire;
 
-        String sql = "INSERT INTO mcd_articles (nom, commentaire) VALUES ('"
-                + nom + "', '" + commentaire + "');";
-
-        db.sqlExec(sql);
+        String sql = "INSERT INTO mcd_articles (nom, commentaire) VALUES (?, ?)";
+        db.sqlExec(sql, nom, commentaire);
 
         ResultSet res = db.sqlLastId();
         res.first();
@@ -66,8 +59,8 @@ public class M_Articles {
         this.db = db;
         this.id = id;
 
-        String sql = "SELECT * FROM mcd_articles WHERE id=" + id + ";";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_articles WHERE id= ?";
+        ResultSet res = db.sqlSelect(sql, id);
         res.first();
 
         this.nom = res.getString("nom");
@@ -106,44 +99,41 @@ public class M_Articles {
     // UPDATE
     // -------------------------
     public void update() throws SQLException {
-        String sql = "UPDATE mcd_articles SET "
-                + "nom='" + nom + "', "
-                + "commentaire='" + commentaire + "'"
-                + " WHERE id=" + id + ";";
-
-        db.sqlExec(sql);
+        String sql = "UPDATE mcd_articles SET nom= ? , commentaire = ? WHERE id= ?";
+        db.sqlExec(sql, nom, commentaire, id);
     }
 
     // -------------------------
     // DELETE
     // -------------------------
     public void delete() throws SQLException {
-        String sql = "DELETE FROM mcd_articles WHERE id=" + id + ";";
-        db.sqlExec(sql);
+        String sql = "DELETE FROM mcd_articles WHERE id= ?";
+        db.sqlExec(sql, id);
     }
 
     // -------------------------
     // SELECT MULTI
     // -------------------------
-    public static LinkedHashMap<Integer, M_Articles> getRecords(Db_mariadb db, String clauseWhere) throws SQLException {
+    public static LinkedHashMap<Integer, M_Articles> getRecords(
+            Db_mariadb db,
+            String clauseWhere,
+            Object... params
+    ) throws SQLException {
 
         LinkedHashMap<Integer, M_Articles> lesArticles = new LinkedHashMap<>();
-        M_Articles unArticle;
 
-        int cle;
-        String nom, commentaire;
-
-        String sql = "SELECT * FROM mcd_articles WHERE " + clauseWhere + " ORDER BY nom;";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_articles WHERE " + clauseWhere + " ORDER BY nom";
+        ResultSet res = db.sqlSelect(sql, params);
 
         while (res.next()) {
-            cle = res.getInt("id");
-            nom = res.getString("nom");
-            commentaire = res.getString("commentaire");
+            int cle = res.getInt("id");
+            String nom = res.getString("nom");
+            String commentaire = res.getString("commentaire");
 
-            unArticle = new M_Articles(db, cle, nom, commentaire);
+            M_Articles unArticle = new M_Articles(db, cle, nom, commentaire);
             lesArticles.put(cle, unArticle);
         }
+
         res.close();
         return lesArticles;
     }
@@ -157,7 +147,9 @@ public class M_Articles {
         return "M_Articles{" + "id=" + id + ", nom='" + nom + "', commentaire='" + commentaire + "'}";
     }
 
-    /* Tests */
+// -------------------------
+// TESTS
+// -------------------------
     public static void main(String[] args) throws Exception {
 
         Db_mariadb base = new Db_mariadb(
@@ -166,23 +158,66 @@ public class M_Articles {
                 Cl_Connection.password
         );
 
-//        M_Articles a1 = new M_Articles(base, 1);
-//        System.out.println(a1);
-//
-//        M_Articles a2 = new M_Articles(base, "Céréales", "Test insertion");
-//        System.out.println(a2);
-//
-//        M_Articles a3 = new M_Articles(base, a2.getId());
-//        a3.setNom("Céréales modifiées");
-//        a3.setCommentaire("Commentaire modifié");
-//        a3.update();
-//        System.out.println(a3);
-//
-        LinkedHashMap<Integer, M_Articles> lesArticles = M_Articles.getRecords(base);
-        for (int cle : lesArticles.keySet()) {
-            System.out.println(lesArticles.get(cle));
+        System.out.println("=== TEST 1 : SELECT par ID ===");
+        M_Articles a1 = new M_Articles(base, 1);
+        System.out.println(a1);
+
+        System.out.println("\n=== TEST 2 : INSERT ===");
+        M_Articles a2 = new M_Articles(base, "Céréales", "Test insertion");
+        System.out.println("Nouvel article créé : " + a2);
+
+        System.out.println("\n=== TEST 3 : UPDATE ===");
+        a2.setNom("Céréales modifiées");
+        a2.setCommentaire("Commentaire modifié");
+        a2.update();
+        // Relecture pour vérifier
+        M_Articles a2bis = new M_Articles(base, a2.getId());
+        System.out.println("Après update : " + a2bis);
+
+        System.out.println("\n=== TEST 4 : getRecords (tous) ===");
+        LinkedHashMap<Integer, M_Articles> tous = M_Articles.getRecords(base);
+        System.out.println("Nombre d'articles : " + tous.size());
+        for (M_Articles a : tous.values()) {
+            System.out.println("  " + a);
         }
 
-//        a3.delete();
+        System.out.println("\n=== TEST 5 : getRecords avec filtre (hybride sécurisé) ===");
+        String recherche = "Céréales";
+        LinkedHashMap<Integer, M_Articles> filtres = M_Articles.getRecords(
+                base,
+                "nom LIKE ?",
+                "%" + recherche + "%"
+        );
+        System.out.println("Recherche '" + recherche + "' : " + filtres.size() + " résultat(s)");
+        for (M_Articles a : filtres.values()) {
+            System.out.println("  " + a);
+        }
+
+        System.out.println("\n=== TEST 6 : getRecords avec plusieurs critères ===");
+        LinkedHashMap<Integer, M_Articles> multi = M_Articles.getRecords(
+                base,
+                "nom LIKE ? AND id > ?",
+                "%a%",
+                0
+        );
+        System.out.println("Articles contenant 'a' avec id > 0 : " + multi.size() + " résultat(s)");
+        for (M_Articles a : multi.values()) {
+            System.out.println("  " + a);
+        }
+
+        System.out.println("\n=== TEST 7 : DELETE ===");
+        System.out.println("Suppression de : " + a2);
+        a2.delete();
+        System.out.println("Article supprimé !");
+
+        System.out.println("\n=== TEST 8 : Vérification après suppression ===");
+        LinkedHashMap<Integer, M_Articles> apres = M_Articles.getRecords(base);
+        System.out.println("Nombre d'articles restants : " + apres.size());
+        for (M_Articles a : apres.values()) {
+            System.out.println("  " + a);
+        }
+
+        System.out.println("\n=== TOUS LES TESTS SONT VALIDÉS  ===");
     }
+
 }

@@ -6,7 +6,7 @@ package pj_listecourse;
 
 /**
  *
- * @author ninis
+ * @author Yipton
  */
 public class V_CListe extends javax.swing.JDialog {
 

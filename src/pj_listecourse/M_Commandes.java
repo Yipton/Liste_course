@@ -1,18 +1,18 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
  */
 package pj_listecourse;
 
+/**
+ *
+ * @author Yipton
+ */
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
-/**
- *
- * @author ninis
- */
 public class M_Commandes {
 
     private Db_mariadb db;
@@ -20,8 +20,10 @@ public class M_Commandes {
     private String commentaire;
     private LocalDateTime created_at, updated_at;
     private float prix_unitaire;
-    
-//Lecture
+
+    // -------------------------
+    // Constructeur lecture directe
+    // -------------------------
     public M_Commandes(Db_mariadb db, int idCommande, int quantite, String commentaire, int id_article,
             int id_liste, int id_marque, int id_magasin, float prix_unitaire) {
         this.db = db;
@@ -34,7 +36,10 @@ public class M_Commandes {
         this.id_magasin = id_magasin;
         this.prix_unitaire = prix_unitaire;
     }
-//Insert
+
+    // -------------------------
+    // Constructeur INSERT
+    // -------------------------
     public M_Commandes(Db_mariadb db, int quantite, String commentaire, int id_article,
             int id_liste, int id_marque, int id_magasin, float prix_unitaire) throws SQLException {
         this.db = db;
@@ -47,26 +52,24 @@ public class M_Commandes {
         this.prix_unitaire = prix_unitaire;
 
         String sql = "INSERT INTO mcd_commandes (quantite, commentaire, id_article, id_liste, id_marque, id_magasin, prix_unitaire) "
-                + "VALUES (" + quantite + ", '" + commentaire + "', "
-                + id_article + ", " + id_liste + ", " + id_marque + ", "
-                + id_magasin + ", " + prix_unitaire + ");";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        db.sqlExec(sql, quantite, commentaire, id_article, id_liste, id_marque, id_magasin, prix_unitaire);
 
-        db.sqlExec(sql);
-        ResultSet res;
-        res = db.sqlLastId();
+        ResultSet res = db.sqlLastId();
         res.first();
         this.idCommande = res.getInt("id");
         res.close();
     }
 
+    // -------------------------
+    // Constructeur SELECT par ID
+    // -------------------------
     public M_Commandes(Db_mariadb db, int idCommande) throws SQLException {
         this.db = db;
         this.idCommande = idCommande;
 
-        String sql = "SELECT * FROM mcd_commandes WHERE id ='" + idCommande + "';";
-
-        ResultSet res;
-        res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_commandes WHERE id = ?";
+        ResultSet res = db.sqlSelect(sql, idCommande);
         res.first();
 
         this.quantite = res.getInt("quantite");
@@ -81,6 +84,9 @@ public class M_Commandes {
         res.close();
     }
 
+    // -------------------------
+    // Getters
+    // -------------------------
     public int getIdCommande() {
         return idCommande;
     }
@@ -101,16 +107,16 @@ public class M_Commandes {
         return id_marque;
     }
 
+    public int getId_magasin() {
+        return id_magasin;
+    }
+
     public String getCommentaire() {
         return commentaire;
     }
 
     public LocalDateTime getCreated_at() {
         return created_at;
-    }
-
-    public int getId_magasin() {
-        return id_magasin;
     }
 
     public LocalDateTime getUpdated_at() {
@@ -121,6 +127,9 @@ public class M_Commandes {
         return prix_unitaire;
     }
 
+    // -------------------------
+    // Setters
+    // -------------------------
     public void setQuantite(int quantite) {
         this.quantite = quantite;
     }
@@ -137,58 +146,66 @@ public class M_Commandes {
         this.id_marque = id_marque;
     }
 
-    public void setCommentaire(String commentaire) {
-        this.commentaire = commentaire;
-    }
-
     public void setId_magasin(int id_magasin) {
         this.id_magasin = id_magasin;
+    }
+
+    public void setCommentaire(String commentaire) {
+        this.commentaire = commentaire;
     }
 
     public void setPrix_unitaire(float prix_unitaire) {
         this.prix_unitaire = prix_unitaire;
     }
 
+    // -------------------------
+    // UPDATE
+    // -------------------------
     public void update() throws SQLException {
         String sql = "UPDATE mcd_commandes SET "
-                + "quantite=" + quantite + ", "
-                + "commentaire='" + commentaire + "', "
-                + "id_article=" + id_article + ", "
-                + "id_liste=" + id_liste + ", "
-                + "id_marque=" + id_marque + ", "
-                + "id_magasin=" + id_magasin + ", "
-                + "prix_unitaire=" + prix_unitaire + " "
-                + "WHERE id=" + idCommande + ";";
-        db.sqlExec(sql);
+                + "quantite = ?, "
+                + "commentaire = ?, "
+                + "id_article = ?, "
+                + "id_liste = ?, "
+                + "id_marque = ?, "
+                + "id_magasin = ?, "
+                + "prix_unitaire = ? "
+                + "WHERE id = ?";
+        db.sqlExec(sql, quantite, commentaire, id_article, id_liste, id_marque, id_magasin, prix_unitaire, idCommande);
     }
 
+    // -------------------------
+    // DELETE
+    // -------------------------
     public void delete() throws SQLException {
-        String sql = "DELETE FROM mcd_commandes WHERE id='" + idCommande + "';";
-        db.sqlExec(sql);
+        String sql = "DELETE FROM mcd_commandes WHERE id = ?";
+        db.sqlExec(sql, idCommande);
     }
 
-    public static LinkedHashMap<Integer, M_Commandes> getRecords(Db_mariadb db, String clauseWhere) throws SQLException {
-        LinkedHashMap<Integer, M_Commandes> lesCommandes = new LinkedHashMap();
-        M_Commandes uneCommande;
+    // -------------------------
+    // SELECT MULTI (hybride sécurisé)
+    // -------------------------
+    public static LinkedHashMap<Integer, M_Commandes> getRecords(
+            Db_mariadb db,
+            String clauseWhere,
+            Object... params
+    ) throws SQLException {
+        LinkedHashMap<Integer, M_Commandes> lesCommandes = new LinkedHashMap<>();
 
-        int cle, quantite, id_article, id_liste, id_marque, id_magasin;
-        String commentaire;
-        float prix_unitaire;
-
-        String sql = "SELECT * FROM mcd_commandes WHERE " + clauseWhere + ";";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_commandes WHERE " + clauseWhere;
+        ResultSet res = db.sqlSelect(sql, params);
 
         while (res.next()) {
-            cle = res.getInt("id");
-            quantite = res.getInt("quantite");
-            commentaire = res.getString("commentaire");
-            id_article = res.getInt("id_article");
-            id_liste = res.getInt("id_liste");
-            id_marque = res.getInt("id_marque");
-            id_magasin = res.getInt("id_magasin");
-            prix_unitaire = res.getFloat("prix_unitaire");
+            int cle = res.getInt("id");
+            int quantite = res.getInt("quantite");
+            String commentaire = res.getString("commentaire");
+            int id_article = res.getInt("id_article");
+            int id_liste = res.getInt("id_liste");
+            int id_marque = res.getInt("id_marque");
+            int id_magasin = res.getInt("id_magasin");
+            float prix_unitaire = res.getFloat("prix_unitaire");
 
-            uneCommande = new M_Commandes(db, cle, quantite, commentaire, id_article, id_liste, id_marque, id_magasin, prix_unitaire);
+            M_Commandes uneCommande = new M_Commandes(db, cle, quantite, commentaire, id_article, id_liste, id_marque, id_magasin, prix_unitaire);
             lesCommandes.put(cle, uneCommande);
         }
         res.close();
@@ -199,75 +216,127 @@ public class M_Commandes {
         return getRecords(db, "1 = 1");
     }
 
+    // -------------------------
+    // toString
+    // -------------------------
     @Override
     public String toString() {
-        return "M_Commandes{" + "db=" + db + ", idCommande=" + idCommande + ", quantite=" + quantite + ", id_article=" + id_article + ", id_liste=" + id_liste + ", id_marque=" + id_marque + ", id_magasin=" + id_magasin + ", commentaire=" + commentaire + ", created_at=" + created_at + ", updated_at=" + updated_at + ", prix_unitaire=" + prix_unitaire + '}';
+        return "M_Commandes{idCommande=" + idCommande
+                + ", quantite=" + quantite
+                + ", id_article=" + id_article
+                + ", id_liste=" + id_liste
+                + ", id_marque=" + id_marque
+                + ", id_magasin=" + id_magasin
+                + ", commentaire='" + commentaire + "'"
+                + ", prix_unitaire=" + prix_unitaire
+                + ", created_at=" + created_at
+                + ", updated_at=" + updated_at + "}";
     }
 
-    /*Tests*/
-//    public static void main(String[] args) throws Exception {
-//
-//        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
-//
-//        // 1) Récupérer un triplet EXISTANT dans mcd_proposer (obligatoire pour la FK composite)
-//        int idArticle = 0, idMarque = 0, idMagasin = 0;
-//        float prixUnitaire = 0f;
-//
-//        ResultSet rp = base.sqlSelect("SELECT id_article, id_marque, id_magasin, prix "
-//                + "FROM mcd_proposer "
-//                + "WHERE prix IS NOT NULL "
-//                + "LIMIT 1;");
-//        if (!rp.first()) {
-//            rp.close();
-//            throw new Exception("❌ Aucun enregistrement dans mcd_proposer (avec prix). Ajoute au moins une proposition.");
-//        }
-//        idArticle = rp.getInt("id_article");
-//        idMarque = rp.getInt("id_marque");
-//        idMagasin = rp.getInt("id_magasin");
-//        prixUnitaire = rp.getFloat("prix");
-//        rp.close();
-//
-//        // 2) Récupérer une liste EXISTANTE
-//        int idListe = 0;
-//        ResultSet rl = base.sqlSelect("SELECT id FROM mcd_listes LIMIT 1;");
-//        if (!rl.first()) {
-//            rl.close();
-//            throw new Exception("❌ Aucune liste dans mcd_listes. Crée une liste avant de tester les commandes.");
-//        }
-//        idListe = rl.getInt("id");
-//        rl.close();
-//
-//        System.out.println("Triplet proposer trouvé : article=" + idArticle + ", marque=" + idMarque + ", magasin=" + idMagasin + ", prix=" + prixUnitaire);
-//        System.out.println("Liste trouvée : idListe=" + idListe);
-//
-//        System.out.println("\n=== CREATE ===");
-//        M_Commandes c1 = new M_Commandes(base, 2, "test commande", idArticle, idListe, idMarque, idMagasin, prixUnitaire);
-//        System.out.println(c1);
-//
-//        System.out.println("\n=== READ ===");
-//        M_Commandes c2 = new M_Commandes(base, c1.getIdCommande());
-//        System.out.println(c2);
-//
-//        System.out.println("\n=== UPDATE ===");
-//        c2.setQuantite(5);
-//        c2.setCommentaire("test commande modifiée");
-//        c2.setPrix_unitaire(prixUnitaire + 0.10f); // juste pour voir la modif
-//        c2.update();
-//
-//        M_Commandes c3 = new M_Commandes(base, c1.getIdCommande());
-//        System.out.println(c3);
-//
-//        System.out.println("\n=== DELETE ===");
-//        c3.delete();
-//        System.out.println("Commande supprimée");
-//
-//        System.out.println("\n=== LISTE DES COMMANDES ===");
-//        LinkedHashMap<Integer, M_Commandes> lesCmd = M_Commandes.getRecords(base);
-//        for (int cle : lesCmd.keySet()) {
-//            System.out.println(lesCmd.get(cle));
-//        }
-//
-//        System.out.println("\n✅ Tests M_Commandes OK");
-//    }
-    /*End Tests*/
+    // -------------------------
+    // Tests
+    // -------------------------
+    public static void main(String[] args) throws Exception {
+
+        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
+
+        // ===========================
+        // Récupérer un triplet EXISTANT dans mcd_proposer
+        // ===========================
+        int idArticle = 0, idMarque = 0, idMagasin = 0;
+        float prixUnitaire = 0f;
+
+        ResultSet rp = base.sqlSelect("SELECT id_article, id_marque, id_magasin, prix "
+                + "FROM mcd_proposer WHERE prix IS NOT NULL LIMIT 1");
+        if (!rp.first()) {
+            rp.close();
+            throw new Exception("Aucun enregistrement dans mcd_proposer");
+        }
+        idArticle = rp.getInt("id_article");
+        idMarque = rp.getInt("id_marque");
+        idMagasin = rp.getInt("id_magasin");
+        prixUnitaire = rp.getFloat("prix");
+        rp.close();
+
+        // ===========================
+        // Récupérer une liste EXISTANTE
+        // ===========================
+        int idListe = 0;
+        ResultSet rl = base.sqlSelect("SELECT id FROM mcd_listes LIMIT 1");
+        if (!rl.first()) {
+            rl.close();
+            throw new Exception("Aucune liste dans mcd_listes");
+        }
+        idListe = rl.getInt("id");
+        rl.close();
+
+        System.out.println("=== DONNÉES DE TEST ===");
+        System.out.println("Triplet proposer : article=" + idArticle + ", marque=" + idMarque + ", magasin=" + idMagasin + ", prix=" + prixUnitaire);
+        System.out.println("Liste : idListe=" + idListe);
+
+        // ===========================
+        // TEST 1 : INSERT
+        // ===========================
+        System.out.println("\n=== TEST 1 : INSERT ===");
+        M_Commandes c1 = new M_Commandes(base, 2, "test commande", idArticle, idListe, idMarque, idMagasin, prixUnitaire);
+        System.out.println("Nouvelle commande : " + c1);
+
+        // ===========================
+        // TEST 2 : SELECT par ID
+        // ===========================
+        System.out.println("\n=== TEST 2 : SELECT par ID ===");
+        M_Commandes c2 = new M_Commandes(base, c1.getIdCommande());
+        System.out.println("Commande lue : " + c2);
+
+        // ===========================
+        // TEST 3 : UPDATE
+        // ===========================
+        System.out.println("\n=== TEST 3 : UPDATE ===");
+        c2.setQuantite(5);
+        c2.setCommentaire("test commande modifiée");
+        c2.setPrix_unitaire(prixUnitaire + 0.10f);
+        c2.update();
+        M_Commandes c3 = new M_Commandes(base, c1.getIdCommande());
+        System.out.println("Après update : " + c3);
+
+        // ===========================
+        // TEST 4 : getRecords (tous)
+        // ===========================
+        System.out.println("\n=== TEST 4 : getRecords (tous) ===");
+        LinkedHashMap<Integer, M_Commandes> toutes = M_Commandes.getRecords(base);
+        System.out.println("Nombre de commandes : " + toutes.size());
+        for (M_Commandes c : toutes.values()) {
+            System.out.println("  " + c);
+        }
+
+        // ===========================
+        // TEST 5 : getRecords avec filtre (hybride sécurisé)
+        // ===========================
+        System.out.println("\n=== TEST 5 : getRecords avec filtre ===");
+        LinkedHashMap<Integer, M_Commandes> filtrees = M_Commandes.getRecords(base, "quantite > ?", 1);
+        System.out.println("Commandes avec quantité > 1 : " + filtrees.size() + " résultat(s)");
+        for (M_Commandes c : filtrees.values()) {
+            System.out.println("  " + c);
+        }
+
+        // ===========================
+        // TEST 6 : DELETE
+        // ===========================
+        System.out.println("\n=== TEST 6 : DELETE ===");
+        System.out.println("Suppression de : " + c3);
+        c3.delete();
+        System.out.println("Commande supprimée !");
+
+        // ===========================
+        // TEST 7 : Vérification après suppression
+        // ===========================
+        System.out.println("\n=== TEST 7 : Vérification après suppression ===");
+        LinkedHashMap<Integer, M_Commandes> restantes = M_Commandes.getRecords(base);
+        System.out.println("Nombre de commandes restantes : " + restantes.size());
+        for (M_Commandes c : restantes.values()) {
+            System.out.println("  " + c);
+        }
+
+        System.out.println("\n=== TOUS LES TESTS SONT VALIDÉS ===");
+    }
 }

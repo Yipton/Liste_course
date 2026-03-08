@@ -4,6 +4,10 @@
  */
 package pj_listecourse;
 
+/**
+ *
+ * @author Yipton
+ */
 import java.awt.CardLayout;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -14,10 +18,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.table.DefaultTableModel;
 
-/**
- *
- * @author ninis
- */
 public class V_Listes_Ben extends javax.swing.JDialog {
 
     private String nom, commentaire;

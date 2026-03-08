@@ -12,7 +12,7 @@ import java.util.Random;
 
 /**
  *
- * @author ninis
+ * @author Yipton
  */
 public class C_ListeCourse {
 

@@ -4,6 +4,10 @@
  */
 package pj_listecourse;
 
+/**
+ *
+ * @author Yipton
+ */
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,12 +18,13 @@ public class M_Users {
 
     private Db_mariadb db;
 
-    // Champs BDD
     private int idUtilisateur, id_role;
     private String name, prenom, nom, email, password, remember_token, commentaire;
     private LocalDateTime email_verified_at, created_at, updated_at;
 
-    // ---------------- CONSTRUCTEURS ----------------
+    // -------------------------
+    // Constructeur lecture directe
+    // -------------------------
     public M_Users(Db_mariadb db,
             int idUtilisateur,
             String name,
@@ -49,9 +54,9 @@ public class M_Users {
         this.id_role = id_role;
     }
 
-    /**
-     * Constructeur "INSERT"
-     */
+    // -------------------------
+    // Constructeur INSERT
+    // -------------------------
     public M_Users(Db_mariadb db,
             String name,
             String prenom,
@@ -67,25 +72,15 @@ public class M_Users {
         this.nom = nom;
         this.email = email;
         this.password = password;
-        this.remember_token = remember_token;
         this.commentaire = commentaire;
         this.id_role = id_role;
-
         this.email_verified_at = null;
         this.updated_at = null;
+        this.remember_token = null;
 
         String sql = "INSERT INTO mcd_users (name, prenom, nom, email, password, commentaire, id_role) "
-                + "VALUES ("
-                + "'" + name + "', "
-                + "'" + prenom + "', "
-                + "'" + nom + "', "
-                + "'" + email + "', "
-                + "'" + password + "', "
-                + (commentaire == null ? "NULL" : "'" + commentaire + "'") + ", "
-                + id_role
-                + ")";
-
-        db.sqlExec(sql);
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        db.sqlExec(sql, name, prenom, nom, email, password, commentaire, id_role);
 
         ResultSet res = db.sqlLastId();
         res.first();
@@ -93,15 +88,15 @@ public class M_Users {
         res.close();
     }
 
-    /**
-     * Constructeur "SELECT by id"
-     */
+    // -------------------------
+    // Constructeur SELECT par ID
+    // -------------------------
     public M_Users(Db_mariadb db, int idUtilisateur) throws SQLException {
         this.db = db;
         this.idUtilisateur = idUtilisateur;
 
-        String sql = "SELECT * FROM mcd_users WHERE id = " + idUtilisateur;
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_users WHERE id = ?";
+        ResultSet res = db.sqlSelect(sql, idUtilisateur);
         res.first();
 
         this.name = res.getString("name");
@@ -119,7 +114,9 @@ public class M_Users {
         res.close();
     }
 
-    // ---------------- GETTERS ----------------
+    // -------------------------
+    // Getters
+    // -------------------------
     public int getIdUtilisateur() {
         return idUtilisateur;
     }
@@ -168,7 +165,9 @@ public class M_Users {
         return updated_at;
     }
 
-    // ---------------- SETTERS ----------------
+    // -------------------------
+    // Setters
+    // -------------------------
     public void setName(String name) {
         this.name = name;
     }
@@ -205,59 +204,60 @@ public class M_Users {
         this.id_role = id_role;
     }
 
-    // ---------------- CRUD ----------------
+    // -------------------------
+    // UPDATE
+    // -------------------------
     public void update() throws SQLException {
-        String emailVerifiedSql = (email_verified_at == null)
-                ? "NULL"
-                : "'" + email_verified_at.toString().replace('T', ' ') + "'";
-
         String sql = "UPDATE mcd_users SET "
-                + "name = '" + name + "', "
-                + "prenom = '" + prenom + "', "
-                + "nom = '" + nom + "', "
-                + "email = '" + email + "', "
-                + "email_verified_at = " + emailVerifiedSql + ", "
-                + "password = '" + password + "', "
-                + "remember_token = " + (remember_token == null ? "NULL" : "'" + remember_token + "'") + ", "
-                + "commentaire = " + (commentaire == null ? "NULL" : "'" + commentaire + "'") + ", "
-                + "id_role = " + id_role + " "
-                + "WHERE id = " + idUtilisateur;
-
-        db.sqlExec(sql);
+                + "name = ?, "
+                + "prenom = ?, "
+                + "nom = ?, "
+                + "email = ?, "
+                + "email_verified_at = ?, "
+                + "password = ?, "
+                + "remember_token = ?, "
+                + "commentaire = ?, "
+                + "id_role = ? "
+                + "WHERE id = ?";
+        db.sqlExec(sql, name, prenom, nom, email, email_verified_at, password, remember_token, commentaire, id_role, idUtilisateur);
     }
 
+    // -------------------------
+    // DELETE
+    // -------------------------
     public void delete() throws SQLException {
-        String sql = "DELETE FROM mcd_users WHERE id = " + idUtilisateur;
-        db.sqlExec(sql);
+        String sql = "DELETE FROM mcd_users WHERE id = ?";
+        db.sqlExec(sql, idUtilisateur);
     }
 
-    // ---------------- GETRECORDS ----------------
-    public static LinkedHashMap<Integer, M_Users> getRecords(Db_mariadb db, String clauseWhere) throws SQLException {
+    // -------------------------
+    // SELECT MULTI (hybride sécurisé)
+    // -------------------------
+    public static LinkedHashMap<Integer, M_Users> getRecords(
+            Db_mariadb db,
+            String clauseWhere,
+            Object... params
+    ) throws SQLException {
         LinkedHashMap<Integer, M_Users> lesUsers = new LinkedHashMap<>();
-        M_Users unUser;
-
-        int cle, id_role;
-        String name, prenom, nom, email, password, remember_token, commentaire;
-        LocalDateTime email_verified_at, created_at, updated_at;
 
         String sql = "SELECT * FROM mcd_users WHERE " + clauseWhere + " ORDER BY nom, prenom";
-        ResultSet res = db.sqlSelect(sql);
+        ResultSet res = db.sqlSelect(sql, params);
 
         while (res.next()) {
-            cle = res.getInt("id");
-            name = res.getString("name");
-            prenom = res.getString("prenom");
-            nom = res.getString("nom");
-            email = res.getString("email");
-            email_verified_at = res.getObject("email_verified_at", LocalDateTime.class);
-            password = res.getString("password");
-            remember_token = res.getString("remember_token");
-            commentaire = res.getString("commentaire");
-            created_at = res.getObject("created_at", LocalDateTime.class);
-            updated_at = res.getObject("updated_at", LocalDateTime.class);
-            id_role = res.getInt("id_role");
+            int cle = res.getInt("id");
+            String name = res.getString("name");
+            String prenom = res.getString("prenom");
+            String nom = res.getString("nom");
+            String email = res.getString("email");
+            LocalDateTime email_verified_at = res.getObject("email_verified_at", LocalDateTime.class);
+            String password = res.getString("password");
+            String remember_token = res.getString("remember_token");
+            String commentaire = res.getString("commentaire");
+            LocalDateTime created_at = res.getObject("created_at", LocalDateTime.class);
+            LocalDateTime updated_at = res.getObject("updated_at", LocalDateTime.class);
+            int id_role = res.getInt("id_role");
 
-            unUser = new M_Users(db, cle, name, prenom, nom, email, email_verified_at, password, remember_token, commentaire, created_at, updated_at, id_role);
+            M_Users unUser = new M_Users(db, cle, name, prenom, nom, email, email_verified_at, password, remember_token, commentaire, created_at, updated_at, id_role);
             lesUsers.put(cle, unUser);
         }
 
@@ -269,10 +269,12 @@ public class M_Users {
         return getRecords(db, "1 = 1");
     }
 
-    // ---------------- AUTH ----------------
+    // -------------------------
+    // CONNEXION (sécurisée)
+    // -------------------------
     public static M_Users connexion_log(Db_mariadb db, String email, String password) throws SQLException {
-        String sql = "SELECT id, password FROM mcd_users WHERE email = '" + email + "'";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT id, password FROM mcd_users WHERE email = ?";
+        ResultSet res = db.sqlSelect(sql, email);
 
         if (!res.next()) {
             res.close();
@@ -291,80 +293,115 @@ public class M_Users {
         return new M_Users(db, idUtilisateur);
     }
 
-    // ---------------- TO STRING ----------------
+    // -------------------------
+    // toString
+    // -------------------------
     @Override
     public String toString() {
-        return "M_User{"
-                + "id=" + idUtilisateur
-                + ", name='" + name + '\''
-                + ", prenom='" + prenom + '\''
-                + ", nom='" + nom + '\''
-                + ", email='" + email + '\''
+        return "M_Users{id=" + idUtilisateur
+                + ", name='" + name + "'"
+                + ", prenom='" + prenom + "'"
+                + ", nom='" + nom + "'"
+                + ", email='" + email + "'"
                 + ", email_verified_at=" + email_verified_at
-                + ", password='" + password + '\''
-                + ", remember_token='" + remember_token + '\''
-                + ", commentaire='" + commentaire + '\''
-                + ", created_at=" + created_at
-                + ", updated_at=" + updated_at
+                + ", commentaire='" + commentaire + "'"
                 + ", id_role=" + id_role
-                + '}';
+                + ", created_at=" + created_at
+                + ", updated_at=" + updated_at + "}";
     }
 
-    // ---------------- TESTS ----------------
+    // -------------------------
+    // Tests
+    // -------------------------
     public static void main(String[] args) throws Exception {
         Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
 
-        // 0) bcrypt simple (pour vérifier la lib)
-//        String hash = BCrypt.withDefaults().hashToString(12, "pergaixj".toCharArray());
-//        System.out.println("HASH=" + hash);
-//        System.out.println("VERIFY=" + BCrypt.verifyer().verify("pergaixj".toCharArray(), hash).verified);
-
-        // 1) INSERT (crée un user)
+        // ===========================
+        // TEST 1 : INSERT
+        // ===========================
+        System.out.println("=== TEST 1 : INSERT ===");
         String emailTest = "test_" + System.currentTimeMillis() + "@mail.fr";
         String hashPwd = BCrypt.withDefaults().hashToString(12, "azerty".toCharArray());
 
-        M_Users u = new M_Users(base,
-                "pseudoTest",
-                "Yanis",
-                "Proust",
-                emailTest,
-                hashPwd,
-                "créé depuis main()",
-                1
-        );
-        System.out.println("\n[INSERT OK] id=" + u.getIdUtilisateur() + " email=" + u.getEmail());
-//
-//        // 2) SELECT BY ID
-//        M_User u2 = new M_User(base, u.getIdUtilisateur());
-//        System.out.println("\n[SELECT OK]\n" + u2);
-//
-//        // 3) UPDATE
-//        u2.setCommentaire("commentaire modifié");
-//        u2.setNom("PROUST_MODIF");
-//        u2.setPrenom("YANIS_MODIF");
-//        u2.setName("pseudo_modif");
-//        u2.update();
-//        System.out.println("\n[UPDATE OK]");
-//
-//        M_User u3 = new M_User(base, u.getIdUtilisateur());
-//        System.out.println("\n[RE-SELECT AFTER UPDATE]\n" + u3);
+        M_Users u1 = new M_Users(base, "pseudoTest", "Yanis", "Proust", emailTest, hashPwd, "créé depuis main()", 1);
+        System.out.println("Nouvel utilisateur : " + u1);
 
-        // 4) GETRECORDS
-//        LinkedHashMap<Integer, M_User> liste = M_User.getRecords(base);
-//        System.out.println("\n[GETRECORDS FILTRE] size=" + liste.size());
-//        for (int cle : liste.keySet()) {
-//            System.out.println(" - " + liste.get(cle));
-//        }
+        // ===========================
+        // TEST 2 : SELECT par ID
+        // ===========================
+        System.out.println("\n=== TEST 2 : SELECT par ID ===");
+        M_Users u2 = new M_Users(base, u1.getIdUtilisateur());
+        System.out.println("Utilisateur lu : " + u2);
 
-        // 5) CONNEXION (bcrypt check)
-//        M_User connecte = M_User.connexion_log(base, emailTest, "azerty");
-//        System.out.println("\n[CONNEXION OK ?] " + (connecte != null));
-//        if (connecte != null) {
-//            System.out.println(connecte);
-//        }
-//
-        // 6) DELETE
-        // u3.delete();
-        // System.out.println("\n[DELETE OK]");
+        // ===========================
+        // TEST 3 : UPDATE
+        // ===========================
+        System.out.println("\n=== TEST 3 : UPDATE ===");
+        u2.setNom("PROUST_MODIF");
+        u2.setPrenom("YANIS_MODIF");
+        u2.setCommentaire("commentaire modifié");
+        u2.update();
+        M_Users u3 = new M_Users(base, u1.getIdUtilisateur());
+        System.out.println("Après update : " + u3);
+
+        // ===========================
+        // TEST 4 : getRecords (tous)
+        // ===========================
+        System.out.println("\n=== TEST 4 : getRecords (tous) ===");
+        LinkedHashMap<Integer, M_Users> tous = M_Users.getRecords(base);
+        System.out.println("Nombre d'utilisateurs : " + tous.size());
+        int c = 0;
+        for (M_Users u : tous.values()) {
+            System.out.println("  " + u);
+            c++;
+            if (c >= 5) {
+                break;
+            }
+        }
+
+        // ===========================
+        // TEST 5 : getRecords avec filtre (hybride sécurisé)
+        // ===========================
+        System.out.println("\n=== TEST 5 : getRecords avec filtre ===");
+        String recherche = "test";
+        LinkedHashMap<Integer, M_Users> filtres = M_Users.getRecords(base, "email LIKE ?", "%" + recherche + "%");
+        System.out.println("Recherche '" + recherche + "' : " + filtres.size() + " résultat(s)");
+        for (M_Users u : filtres.values()) {
+            System.out.println("  " + u);
+        }
+
+        // ===========================
+        // TEST 6 : CONNEXION (bcrypt)
+        // ===========================
+        System.out.println("\n=== TEST 6 : CONNEXION ===");
+        M_Users connecte = M_Users.connexion_log(base, emailTest, "azerty");
+        if (connecte != null) {
+            System.out.println("Connexion réussie : " + connecte);
+        } else {
+            System.out.println("Connexion échouée");
+        }
+
+        // Test avec mauvais mot de passe
+        M_Users connecteFail = M_Users.connexion_log(base, emailTest, "mauvais");
+        if (connecteFail == null) {
+            System.out.println("Connexion avec mauvais mdp échouée (attendu)");
+        }
+
+        // ===========================
+        // TEST 7 : DELETE
+        // ===========================
+        System.out.println("\n=== TEST 7 : DELETE ===");
+        System.out.println("Suppression de : " + u3);
+        u3.delete();
+        System.out.println("Utilisateur supprimé !");
+
+        // ===========================
+        // TEST 8 : Vérification après suppression
+        // ===========================
+        System.out.println("\n=== TEST 8 : Vérification après suppression ===");
+        LinkedHashMap<Integer, M_Users> restants = M_Users.getRecords(base);
+        System.out.println("Nombre d'utilisateurs restants : " + restants.size());
+
+        System.out.println("\n=== TOUS LES TESTS SONT VALIDÉS ===");
     }
 }

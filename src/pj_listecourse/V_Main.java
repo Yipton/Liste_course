@@ -16,7 +16,7 @@ import javax.swing.JMenuItem;
 
 /**
  *
- * @author ninis
+ * @author Yipton
  */
 public class V_Main extends javax.swing.JFrame {
 

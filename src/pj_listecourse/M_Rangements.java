@@ -4,15 +4,15 @@
  */
 package pj_listecourse;
 
+/**
+ *
+ * @author Yipton
+ */
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 
-/**
- *
- * @author ninis
- */
 public class M_Rangements {
 
     private Db_mariadb db;
@@ -22,7 +22,7 @@ public class M_Rangements {
     private LocalDateTime created_at, updated_at;
 
     // -------------------------
-    // Constructeur "lecture directe"
+    // Constructeur lecture directe
     // -------------------------
     public M_Rangements(Db_mariadb db, int id, String nom, String commentaire) {
         this.db = db;
@@ -39,10 +39,8 @@ public class M_Rangements {
         this.nom = nom;
         this.commentaire = commentaire;
 
-        String sql = "INSERT INTO mcd_rangements (nom, commentaire) VALUES ('"
-                + nom + "', '" + commentaire + "');";
-
-        db.sqlExec(sql);
+        String sql = "INSERT INTO mcd_rangements (nom, commentaire) VALUES (?, ?)";
+        db.sqlExec(sql, nom, commentaire);
 
         ResultSet res = db.sqlLastId();
         res.first();
@@ -57,8 +55,8 @@ public class M_Rangements {
         this.db = db;
         this.id = id;
 
-        String sql = "SELECT * FROM mcd_rangements WHERE id=" + id + ";";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_rangements WHERE id = ?";
+        ResultSet res = db.sqlSelect(sql, id);
         res.first();
 
         this.nom = res.getString("nom");
@@ -97,58 +95,59 @@ public class M_Rangements {
     // UPDATE
     // -------------------------
     public void update() throws SQLException {
-        String sql = "UPDATE mcd_rangements SET "
-                + "nom='" + nom + "', "
-                + "commentaire='" + commentaire + "'"
-                + " WHERE id=" + id + ";";
-
-        db.sqlExec(sql);
+        String sql = "UPDATE mcd_rangements SET nom = ?, commentaire = ? WHERE id = ?";
+        db.sqlExec(sql, nom, commentaire, id);
     }
 
     // -------------------------
     // DELETE
     // -------------------------
     public void delete() throws SQLException {
-        String sql = "DELETE FROM mcd_rangements WHERE id=" + id + ";";
-        db.sqlExec(sql);
+        String sql = "DELETE FROM mcd_rangements WHERE id = ?";
+        db.sqlExec(sql, id);
     }
 
     // -------------------------
-    // SELECT MULTI
+    // SELECT MULTI (hybride sécurisé)
     // -------------------------
-    public static LinkedHashMap<Integer, M_Rangements> getRecords(Db_mariadb db, String clauseWhere) throws SQLException {
+    public static LinkedHashMap<Integer, M_Rangements> getRecords(
+            Db_mariadb db,
+            String clauseWhere,
+            Object... params
+    ) throws SQLException {
 
-        LinkedHashMap<Integer, M_Rangements> lesArticles = new LinkedHashMap<>();
-        M_Rangements unArticle;
+        LinkedHashMap<Integer, M_Rangements> lesRangements = new LinkedHashMap<>();
 
-        int cle;
-        String nom, commentaire;
-
-        String sql = "SELECT * FROM mcd_rangements WHERE " + clauseWhere + " ORDER BY nom;";
-        ResultSet res = db.sqlSelect(sql);
+        String sql = "SELECT * FROM mcd_rangements WHERE " + clauseWhere + " ORDER BY nom";
+        ResultSet res = db.sqlSelect(sql, params);
 
         while (res.next()) {
-            cle = res.getInt("id");
-            nom = res.getString("nom");
-            commentaire = res.getString("commentaire");
+            int cle = res.getInt("id");
+            String nom = res.getString("nom");
+            String commentaire = res.getString("commentaire");
 
-            unArticle = new M_Rangements(db, cle, nom, commentaire);
-            lesArticles.put(cle, unArticle);
+            M_Rangements unRangement = new M_Rangements(db, cle, nom, commentaire);
+            lesRangements.put(cle, unRangement);
         }
         res.close();
-        return lesArticles;
+        return lesRangements;
     }
 
     public static LinkedHashMap<Integer, M_Rangements> getRecords(Db_mariadb db) throws SQLException {
         return getRecords(db, "1 = 1");
     }
 
+    // -------------------------
+    // toString
+    // -------------------------
     @Override
     public String toString() {
-        return "M_Rangements{" + "id=" + id + ", nom='" + nom + "', commentaire='" + commentaire + "'}";
+        return "M_Rangements{id=" + id + ", nom='" + nom + "', commentaire='" + commentaire + "'}";
     }
 
-    /* Tests */
+    // -------------------------
+    // Tests
+    // -------------------------
     public static void main(String[] args) throws Exception {
 
         Db_mariadb base = new Db_mariadb(
@@ -157,23 +156,68 @@ public class M_Rangements {
                 Cl_Connection.password
         );
 
-//        M_Rangements a1 = new M_Rangements(base, 1);
-//        System.out.println(a1);
-//
-//        M_Rangements a2 = new M_Rangements(base, "Rangement test", "Test insertion");
-//        System.out.println(a2);
-//
-//        M_Rangements a3 = new M_Rangements(base, a2.getId());
-//        a3.setNom("Rangement test modifié");
-//        a3.setCommentaire("Commentaire modifié");
-//        a3.update();
-//        System.out.println(a3);
-//
-//        LinkedHashMap<Integer, M_Rangements> lesArticles = M_Rangements.getRecords(base);
-//        for (int cle : lesArticles.keySet()) {
-//            System.out.println(lesArticles.get(cle));
-//        }
-//
-//        a3.delete();
+        // ===========================
+        // TEST 1 : SELECT par ID
+        // ===========================
+        System.out.println("=== TEST 1 : SELECT par ID ===");
+        M_Rangements r1 = new M_Rangements(base, 1);
+        System.out.println(r1);
+
+        // ===========================
+        // TEST 2 : INSERT
+        // ===========================
+        System.out.println("\n=== TEST 2 : INSERT ===");
+        M_Rangements r2 = new M_Rangements(base, "Rangement test", "Test insertion");
+        System.out.println("Nouveau rangement créé : " + r2);
+
+        // ===========================
+        // TEST 3 : UPDATE
+        // ===========================
+        System.out.println("\n=== TEST 3 : UPDATE ===");
+        r2.setNom("Rangement test modifié");
+        r2.setCommentaire("Commentaire modifié");
+        r2.update();
+        System.out.println("Après update : " + r2);
+
+        // ===========================
+        // TEST 4 : getRecords (tous)
+        // ===========================
+        System.out.println("\n=== TEST 4 : getRecords (tous) ===");
+        LinkedHashMap<Integer, M_Rangements> tous = M_Rangements.getRecords(base);
+        System.out.println("Nombre de rangements : " + tous.size());
+        for (M_Rangements r : tous.values()) {
+            System.out.println("  " + r);
+        }
+
+        // ===========================
+        // TEST 5 : getRecords avec filtre (hybride sécurisé)
+        // ===========================
+        System.out.println("\n=== TEST 5 : getRecords avec filtre ===");
+        String recherche = "test";
+        LinkedHashMap<Integer, M_Rangements> filtres = M_Rangements.getRecords(base, "nom LIKE ?", "%" + recherche + "%");
+        System.out.println("Recherche '" + recherche + "' : " + filtres.size() + " résultat(s)");
+        for (M_Rangements r : filtres.values()) {
+            System.out.println("  " + r);
+        }
+
+        // ===========================
+        // TEST 6 : DELETE
+        // ===========================
+        System.out.println("\n=== TEST 6 : DELETE ===");
+        System.out.println("Suppression de : " + r2);
+        r2.delete();
+        System.out.println("Rangement supprimé !");
+
+        // ===========================
+        // TEST 7 : Vérification après suppression
+        // ===========================
+        System.out.println("\n=== TEST 7 : Vérification après suppression ===");
+        LinkedHashMap<Integer, M_Rangements> restants = M_Rangements.getRecords(base);
+        System.out.println("Nombre de rangements restants : " + restants.size());
+        for (M_Rangements r : restants.values()) {
+            System.out.println("  " + r);
+        }
+
+        System.out.println("\n=== TOUS LES TESTS SONT VALIDÉS ===");
     }
 }

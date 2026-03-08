@@ -6,7 +6,7 @@ package pj_listecourse;
 
 /**
  *
- * @author ninis
+ * @author Yipton
  */
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,9 +24,9 @@ public class M_Situer {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    /* =================================================
-       Constructeur UNIQUE : lecture + insert optionnel
-       ================================================= */
+    // -------------------------
+    // Constructeur lecture + insert optionnel
+    // -------------------------
     public M_Situer(
             Db_mariadb db,
             int idRangement,
@@ -43,19 +43,13 @@ public class M_Situer {
         this.commentaire = commentaire;
 
         if (insert) {
-            String sql = "INSERT INTO mcd_situer (id_rangement, id_article, ordre, commentaire) VALUES ("
-                    + idRangement + ", "
-                    + idArticle + ", "
-                    + ordre + ", "
-                    + "'" + commentaire + "');";
-            db.sqlExec(sql);
+            String sql = "INSERT INTO mcd_situer (id_rangement, id_article, ordre, commentaire) VALUES (?, ?, ?, ?)";
+            db.sqlExec(sql, idRangement, idArticle, ordre, commentaire);
         }
 
-        // === Lecture systématique ===
-        String sql = "SELECT * FROM mcd_situer WHERE id_rangement = " + idRangement
-                + " AND id_article = " + idArticle + ";";
-
-        ResultSet res = db.sqlSelect(sql);
+        // Lecture systématique
+        String sql = "SELECT * FROM mcd_situer WHERE id_rangement = ? AND id_article = ?";
+        ResultSet res = db.sqlSelect(sql, idRangement, idArticle);
 
         if (!res.next()) {
             res.close();
@@ -63,7 +57,7 @@ public class M_Situer {
                     + idRangement + ", id_article=" + idArticle + ")");
         }
 
-        this.ordre = res.getInt("ordre"); // 0 si NULL
+        this.ordre = res.getInt("ordre");
         this.commentaire = res.getString("commentaire");
         this.createdAt = res.getObject("created_at", LocalDateTime.class);
         this.updatedAt = res.getObject("updated_at", LocalDateTime.class);
@@ -71,68 +65,29 @@ public class M_Situer {
         res.close();
     }
 
-    /* =======================
-       UPDATE
-       ======================= */
-    public void update() throws SQLException {
-        String sql = "UPDATE mcd_situer SET "
-                + "ordre = " + ordre + ", "
-                + "commentaire = '" + commentaire + "' "
-                + "WHERE id_rangement = " + idRangement
-                + " AND id_article = " + idArticle + ";";
+    // -------------------------
+    // Constructeur SELECT par IDs
+    // -------------------------
+    public M_Situer(Db_mariadb db, int idRangement, int idArticle) throws SQLException {
+        this.db = db;
+        this.idRangement = idRangement;
+        this.idArticle = idArticle;
 
-        db.sqlExec(sql);
-    }
+        String sql = "SELECT * FROM mcd_situer WHERE id_rangement = ? AND id_article = ?";
+        ResultSet res = db.sqlSelect(sql, idRangement, idArticle);
+        res.first();
 
-    /* =======================
-       DELETE
-       ======================= */
-    public void delete() throws SQLException {
-        String sql = "DELETE FROM mcd_situer WHERE id_rangement = " + idRangement
-                + " AND id_article = " + idArticle + ";";
-        db.sqlExec(sql);
-    }
-
-    /* =======================
-       GET RECORDS
-       ======================= */
-    public static LinkedHashMap<String, M_Situer> getRecords(Db_mariadb db, String clauseWhere) throws SQLException {
-
-        LinkedHashMap<String, M_Situer> lesSituer = new LinkedHashMap<>();
-        M_Situer un;
-
-        String sql = "SELECT * FROM mcd_situer WHERE " + clauseWhere
-                + " ORDER BY id_rangement, id_article;";
-
-        ResultSet res = db.sqlSelect(sql);
-
-        while (res.next()) {
-            int idR = res.getInt("id_rangement");
-            int idA = res.getInt("id_article");
-
-            un = new M_Situer(
-                    db,
-                    idR,
-                    idA,
-                    res.getInt("ordre"),
-                    res.getString("commentaire"),
-                    false // lecture uniquement
-            );
-
-            lesSituer.put(idR + "-" + idA, un);
-        }
+        this.ordre = res.getInt("ordre");
+        this.commentaire = res.getString("commentaire");
+        this.createdAt = res.getObject("created_at", LocalDateTime.class);
+        this.updatedAt = res.getObject("updated_at", LocalDateTime.class);
 
         res.close();
-        return lesSituer;
     }
 
-    public static LinkedHashMap<String, M_Situer> getRecords(Db_mariadb db) throws SQLException {
-        return getRecords(db, "1=1");
-    }
-
-    /* =======================
-       GETTERS / SETTERS
-       ======================= */
+    // -------------------------
+    // Getters
+    // -------------------------
     public int getIdRangement() {
         return idRangement;
     }
@@ -149,6 +104,17 @@ public class M_Situer {
         return commentaire;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    // -------------------------
+    // Setters
+    // -------------------------
     public void setOrdre(int ordre) {
         this.ordre = ordre;
     }
@@ -157,68 +123,155 @@ public class M_Situer {
         this.commentaire = commentaire;
     }
 
+    // -------------------------
+    // UPDATE
+    // -------------------------
+    public void update() throws SQLException {
+        String sql = "UPDATE mcd_situer SET ordre = ?, commentaire = ? WHERE id_rangement = ? AND id_article = ?";
+        db.sqlExec(sql, ordre, commentaire, idRangement, idArticle);
+    }
+
+    // -------------------------
+    // DELETE
+    // -------------------------
+    public void delete() throws SQLException {
+        String sql = "DELETE FROM mcd_situer WHERE id_rangement = ? AND id_article = ?";
+        db.sqlExec(sql, idRangement, idArticle);
+    }
+
+    // -------------------------
+    // SELECT MULTI (hybride sécurisé)
+    // -------------------------
+    public static LinkedHashMap<String, M_Situer> getRecords(
+            Db_mariadb db,
+            String clauseWhere,
+            Object... params
+    ) throws SQLException {
+
+        LinkedHashMap<String, M_Situer> lesSituer = new LinkedHashMap<>();
+
+        String sql = "SELECT * FROM mcd_situer WHERE " + clauseWhere
+                + " ORDER BY id_rangement, id_article";
+        ResultSet res = db.sqlSelect(sql, params);
+
+        while (res.next()) {
+            int idR = res.getInt("id_rangement");
+            int idA = res.getInt("id_article");
+
+            M_Situer un = new M_Situer(
+                    db,
+                    idR,
+                    idA,
+                    res.getInt("ordre"),
+                    res.getString("commentaire"),
+                    false
+            );
+
+            lesSituer.put(idR + "-" + idA, un);
+        }
+
+        res.close();
+        return lesSituer;
+    }
+
+    public static LinkedHashMap<String, M_Situer> getRecords(Db_mariadb db) throws SQLException {
+        return getRecords(db, "1 = 1");
+    }
+
+    // -------------------------
+    // toString
+    // -------------------------
     @Override
     public String toString() {
-        return "M_Situer{"
-                + "idRangement=" + idRangement
+        return "M_Situer{idRangement=" + idRangement
                 + ", idArticle=" + idArticle
                 + ", ordre=" + ordre
-                + ", commentaire=" + commentaire
-                + "}";
+                + ", commentaire='" + commentaire + "'}";
     }
-//
-//--------------------------- Tests -------------------------------------------------------------
-//
-//    public static void main(String[] args) throws Exception {
-//        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
-//        // INSERT
-//        M_Situer situer1 = new M_Situer(
-//                base,
-//                3, // idRangement (doit exister)
-//                12, // idArticle   (doit exister)
-//                1, // ordre
-//                "Étagère du haut",
-//                true
-//        );
-//        System.out.println("INSERT OK : " + situer1);
-//
-//        // LECTURE
-//        M_Situer situer2 = new M_Situer(
-//                base,
-//                3,
-//                12,
-//                0,
-//                "",
-//                false
-//        );
-//        System.out.println("LECTURE OK : " + situer2);
-//
-//        // UPDATE
-//        situer2.setOrdre(2);
-//        situer2.setCommentaire("Deuxième étagère");
-//        situer2.update();
-//        System.out.println("UPDATE OK");
-//
-//        // RELECTURE
-//        M_Situer situer3 = new M_Situer(
-//                base,
-//                3,
-//                12,
-//                0,
-//                "",
-//                false
-//        );
-//        System.out.println("RELECTURE : " + situer3);
-//
-//        // GET RECORDS
-//        System.out.println("LISTE COMPLETE :");
-//        LinkedHashMap<String, M_Situer> lesSituer = M_Situer.getRecords(base);
-//        for (String cle : lesSituer.keySet()) {
-//            System.out.println(lesSituer.get(cle));
-//        }
-//
-//        // DELETE
-//        situer3.delete();
-//        System.out.println("DELETE OK");
-//    }
+
+    // -------------------------
+    // Tests
+    // -------------------------
+    public static void main(String[] args) throws Exception {
+        Db_mariadb base = new Db_mariadb(Cl_Connection.url, Cl_Connection.login, Cl_Connection.password);
+
+        // IDs existants pour les FK
+        int idR = 3;
+        int idA = 12;
+
+        // ===========================
+        // TEST 1 : INSERT + READ
+        // ===========================
+        System.out.println("=== TEST 1 : INSERT + READ ===");
+        M_Situer s1 = new M_Situer(base, idR, idA, 1, "Étagère du haut", true);
+        System.out.println("Nouvelle situation : " + s1);
+
+        // ===========================
+        // TEST 2 : READ (sans insert)
+        // ===========================
+        System.out.println("\n=== TEST 2 : READ (sans insert) ===");
+        M_Situer s2 = new M_Situer(base, idR, idA);
+        System.out.println("Situation lue : " + s2);
+
+        // ===========================
+        // TEST 3 : UPDATE
+        // ===========================
+        System.out.println("\n=== TEST 3 : UPDATE ===");
+        s2.setOrdre(2);
+        s2.setCommentaire("Deuxième étagère");
+        s2.update();
+        M_Situer s3 = new M_Situer(base, idR, idA);
+        System.out.println("Après update : " + s3);
+
+        // ===========================
+        // TEST 4 : getRecords (tous)
+        // ===========================
+        System.out.println("\n=== TEST 4 : getRecords (tous) ===");
+        LinkedHashMap<String, M_Situer> tous = M_Situer.getRecords(base);
+        System.out.println("Nombre de situations : " + tous.size());
+        int c = 0;
+        for (String key : tous.keySet()) {
+            System.out.println("  " + key + " -> " + tous.get(key));
+            c++;
+            if (c >= 5) {
+                break;
+            }
+        }
+
+        // ===========================
+        // TEST 5 : getRecords avec filtre (hybride sécurisé)
+        // ===========================
+        System.out.println("\n=== TEST 5 : getRecords avec filtre ===");
+        LinkedHashMap<String, M_Situer> filtres = M_Situer.getRecords(base, "ordre > ?", 0);
+        System.out.println("Situations avec ordre > 0 : " + filtres.size() + " résultat(s)");
+        c = 0;
+        for (String key : filtres.keySet()) {
+            System.out.println("  " + key + " -> " + filtres.get(key));
+            c++;
+            if (c >= 5) {
+                break;
+            }
+        }
+
+        // ===========================
+        // TEST 6 : DELETE
+        // ===========================
+        System.out.println("\n=== TEST 6 : DELETE ===");
+        System.out.println("Suppression de : " + s3);
+        s3.delete();
+        System.out.println("Situation supprimée !");
+
+        // ===========================
+        // TEST 7 : Vérification après DELETE
+        // ===========================
+        System.out.println("\n=== TEST 7 : Vérification après DELETE ===");
+        try {
+            M_Situer s4 = new M_Situer(base, idR, idA);
+            System.out.println(s4);
+        } catch (SQLException ex) {
+            System.out.println("OK (attendu) : " + ex.getMessage());
+        }
+
+        System.out.println("\n=== TOUS LES TESTS SONT VALIDÉS ===");
+    }
 }
