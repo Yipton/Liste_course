@@ -1,7 +1,7 @@
 src/pj_listecourse/Cl_Connection.java
-src/pj_listecourse/Db_mariadb.java
+#src/pj_listecourse/Db_mariadb.java
 /build
-/nbproject
+/nbproject/private/
 
 # Compiled class file
 *.class
